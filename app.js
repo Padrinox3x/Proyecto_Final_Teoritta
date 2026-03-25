@@ -5,7 +5,7 @@ require('dotenv').config();
 const { sql, conectarDB } = require('./db');
 
 // 🔐 Middlewares propios
-const { isAuthenticated } = require('./middlewares/auth');
+//const { isAuthenticated } = require('./middlewares/auth');
 
 // 🔥 Rutas
 const personalRoutes = require('./routes/personal.routes');
