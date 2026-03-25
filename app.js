@@ -53,12 +53,12 @@ app.set('views', __dirname + '/views');
 /* =======================
    API ROUTES
 ======================= */
-app.use('/api/personal', personalRoutes);
-app.use('/api/menu', menuRoutes);
-app.use('/api/modulo', moduloRoutes);
-app.use('/api/perfil', perfilRoutes);
-app.use('/api/usuarios', usuarioRoutes);
-app.use('/api/permisosPerfil', permisosRoutes);
+app.use('/api/personal', require('./routes/personal'));
+app.use('/api/menu', require('./routes/menu'));
+app.use('/api/modulo', require('./routes/modulo'));
+app.use('/api/perfil', require('./routes/perfil'));
+app.use('/api/usuarios', require('./routes/usuarios'));
+app.use('/api/permisosPerfil', require('./routes/permisosPerfil'));
 
 // 🔐 AUTH
 app.use('/auth', authRoutes);
