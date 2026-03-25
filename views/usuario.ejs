@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Usuarios</title>
+<link rel="stylesheet" href="/css/personal.css">
+</head>
+<body>
+
+<div class="toolbar">
+    <input type="text" id="buscar" placeholder="Buscar...">
+    <select id="limit">
+        <option value="5">5</option>
+        <option value="10" selected>10</option>
+        <option value="20">20</option>
+    </select>
+    <button id="btnNuevo">➕</button>
+</div>
+
+<table>
+<thead>
+<tr>
+    <th>Usuario</th>
+    <th>Perfil</th>
+    <th>Correo</th>
+    <th>Celular</th>
+    <th>Estado</th>
+    <th>Acciones</th>
+</tr>
+</thead>
+<tbody id="tablaUsuarios"></tbody>
+</table>
+
+<div class="paginacion">
+    <button id="first">⏮</button>
+    <button id="prev">◀</button>
+    <span id="pagina"></span>
+    <button id="next">▶</button>
+    <button id="last">⏭</button>
+</div>
+
+<!-- MODAL -->
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <h3>Registrar Usuario</h3>
+
+        <form id="formUsuario">
+            <input type="hidden" id="id">
+
+            <input id="strNombreUsuario" placeholder="Usuario" required>
+            <select id="Perfil"></select>
+            <input id="strPwd" placeholder="Contraseña" required>
+            <input id="strCorreo" placeholder="Correo">
+            <input id="strCelular" placeholder="Celular">
+            
+            <select id="estadoUsuario">
+                <option value="1">Activo</option>
+                <option value="0">Inactivo</option>
+            </select>
+
+            <button type="submit">Guardar</button>
+            <button type="button" id="btnCancelar">Cancelar</button>
+        </form>
+    </div>
+</div>
+
+<script src="/js/usuario.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    const form = document.getElementById('formUsuario');
+
+    const nombre = document.getElementById('strNombreUsuario');
+    const perfil = document.getElementById('Perfil');
+    const celular = document.getElementById('strCelular');
+
+    const soloNumeros = /^[0-9]+$/;
+
+    function limitar(input, max) {
+        if (input.value.length > max) {
+            input.value = input.value.slice(0, max);
+        }
+    }
+
+    perfil.addEventListener('input', () => {
+        perfil.value = perfil.value.replace(/[^0-9]/g, '');
+        limitar(perfil, 5);
+    });
+
+    celular.addEventListener('input', () => {
+        celular.value = celular.value.replace(/[^0-9]/g, '');
+        limitar(celular, 15);
+    });
+
+    nombre.addEventListener('input', () => limitar(nombre, 100));
+
+    form.addEventListener('submit', (e) => {
+
+        if (nombre.value.trim().length === 0) {
+            alert('❌ El usuario es obligatorio');
+            e.preventDefault();
+            return;
+        }
+
+        if (!soloNumeros.test(perfil.value)) {
+            alert('❌ Perfil debe ser numérico');
+            e.preventDefault();
+            return;
+        }
+    });
+
+});
+</script>
+
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="./css/Principal_1.1.css">
+<title>CRUD Sucursales</title>
+</head>
+<body>
+
+<h2>Sucursales</h2>
+
+<input type="text" id="search" placeholder="Buscar...">
+<button onclick="openModal()">Agregar</button>
+
+<table border="1">
+<thead>
+<tr>
+<th>Nombre</th>
+<th>Dirección</th>
+<th>Ciudad</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody id="tableBody"></tbody>
+</table>
+
+<div id="modal" style="display:none;">
+<input id="nombre" placeholder="Nombre">
+<input id="direccion" placeholder="Dirección">
+<input id="ciudad" placeholder="Ciudad">
+<button onclick="save()">Guardar</button>
+<button onclick="closeModal()">Cancelar</button>
+</div>
+
+<script>
+let data = JSON.parse(localStorage.getItem("sucursales")) || [];
+let editIndex = null;
+
+function persist(){
+    localStorage.setItem("sucursales", JSON.stringify(data));
+}
+
+function render(){
+    let tbody = document.getElementById("tableBody");
+    tbody.innerHTML = "";
+
+    let search = document.getElementById("search").value.toLowerCase();
+
+    data
+    .filter(d => 
+        d.nombre.toLowerCase().includes(search) ||
+        d.ciudad.toLowerCase().includes(search)
+    )
+    .forEach((d,i)=>{
+        tbody.innerHTML += `
+        <tr>
+            <td>${d.nombre}</td>
+            <td>${d.direccion}</td>
+            <td>${d.ciudad}</td>
+            <td>
+                <button onclick="edit(${i})">Editar</button>
+                <button onclick="del(${i})">Eliminar</button>
+            </td>
+        </tr>`;
+    });
+}
+
+function openModal(){
+    document.getElementById("modal").style.display="block";
+}
+
+function closeModal(){
+    document.getElementById("modal").style.display="none";
+    clear();
+}
+
+function clear(){
+    document.getElementById("nombre").value="";
+    document.getElementById("direccion").value="";
+    document.getElementById("ciudad").value="";
+    editIndex=null;
+}
+
+function save(){
+    let obj = {
+        nombre: document.getElementById("nombre").value,
+        direccion: document.getElementById("direccion").value,
+        ciudad: document.getElementById("ciudad").value
+    };
+
+    if(editIndex !== null){
+        data[editIndex]=obj;
+    } else {
+        data.push(obj);
+    }
+
+    persist();
+    closeModal();
+    render();
+}
+
+function edit(i){
+    let d = data[i];
+    document.getElementById("nombre").value=d.nombre;
+    document.getElementById("direccion").value=d.direccion;
+    document.getElementById("ciudad").value=d.ciudad;
+
+    editIndex=i;
+    openModal();
+}
+
+function del(i){
+    data.splice(i,1);
+    persist();
+    render();
+}
+
+document.getElementById("search").addEventListener("input", render);
+
+render();
+</script>
+
+</body>
+</html>

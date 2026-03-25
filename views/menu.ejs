@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Menú</title>
+<link rel="stylesheet" href="/css/personal.css">
+</head>
+<body>
+
+<div class="toolbar">
+    <input type="text" id="buscar" placeholder="Buscar...">
+    <select id="limit">
+        <option value="5">5</option>
+        <option value="10" selected>10</option>
+        <option value="20">20</option>
+    </select>
+    <button id="btnNuevo">➕</button>
+</div>
+
+<table>
+<thead>
+<tr>
+    <th>Nombre Menú</th>
+    <th>Módulo</th>
+    <th>Acciones</th>
+</tr>
+</thead>
+<tbody id="tablaMenu"></tbody>
+</table>
+
+<div class="paginacion">
+    <button id="first">⏮</button>
+    <button id="prev">◀</button>
+    <span id="pagina"></span>
+    <button id="next">▶</button>
+    <button id="last">⏭</button>
+</div>
+
+<!-- MODAL -->
+<div id="modal" class="modal">
+    <div class="modal-content">
+        <h3>Registrar Menú</h3>
+
+        <form id="formMenu">
+            <input type="hidden" id="id">
+
+            <input id="strNombreMenu" placeholder="Nombre del menú" required>
+           <select id="Modulo"></select>
+
+            <button type="submit">Guardar</button>
+            <button type="button" id="btnCancelar">Cancelar</button>
+        </form>
+    </div>
+</div>
+
+<script src="/js/menu.js"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    const nombre = document.getElementById('strNombreMenu');
+    const modulo = document.getElementById('Modulo');
+
+    function limitar(input, max) {
+        if (input.value.length > max) {
+            input.value = input.value.slice(0, max);
+        }
+    }
+
+    nombre.addEventListener('input', () => {
+        limitar(nombre, 100);
+    });
+
+    modulo.addEventListener('input', () => {
+        modulo.value = modulo.value.replace(/[^0-9]/g, '');
+        limitar(modulo, 5);
+    });
+
+});
+</script>
+
+</body>
+</html>

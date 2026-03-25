@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="./css/Principal_1.1.css">
+<title>CRUD Transportes</title>
+</head>
+<body>
+
+<h2>Transportes</h2>
+
+<input type="text" id="search" placeholder="Buscar...">
+<button onclick="openModal()">Agregar</button>
+
+<table border="1">
+<thead>
+<tr>
+<th>Placas</th>
+<th>Marca</th>
+<th>Modelo</th>
+<th>Año</th>
+<th>Acciones</th>
+</tr>
+</thead>
+<tbody id="tableBody"></tbody>
+</table>
+
+<div id="modal" style="display:none;">
+<input id="placas" placeholder="Placas">
+<input id="marca" placeholder="Marca">
+<input id="modelo" placeholder="Modelo">
+<input id="year" type="number" placeholder="Año">
+<button onclick="save()">Guardar</button>
+<button onclick="closeModal()">Cancelar</button>
+</div>
+
+<script>
+let data = JSON.parse(localStorage.getItem("transportes")) || [];
+let editIndex = null;
+
+function persist(){
+    localStorage.setItem("transportes", JSON.stringify(data));
+}
+
+function render(){
+    let tbody = document.getElementById("tableBody");
+    tbody.innerHTML = "";
+
+    let search = document.getElementById("search").value.toLowerCase();
+
+    data
+    .filter(d => 
+        d.placas.toLowerCase().includes(search) ||
+        d.marca.toLowerCase().includes(search)
+    )
+    .forEach((d,i)=>{
+        tbody.innerHTML += `
+        <tr>
+            <td>${d.placas}</td>
+            <td>${d.marca}</td>
+            <td>${d.modelo}</td>
+            <td>${d.year}</td>
+            <td>
+                <button onclick="edit(${i})">Editar</button>
+                <button onclick="del(${i})">Eliminar</button>
+            </td>
+        </tr>`;
+    });
+}
+
+function openModal(){
+    document.getElementById("modal").style.display="block";
+}
+
+function closeModal(){
+    document.getElementById("modal").style.display="none";
+    clear();
+}
+
+function clear(){
+    document.getElementById("placas").value="";
+    document.getElementById("marca").value="";
+    document.getElementById("modelo").value="";
+    document.getElementById("year").value="";
+    editIndex=null;
+}
+
+function save(){
+    let obj = {
+        placas: document.getElementById("placas").value,
+        marca: document.getElementById("marca").value,
+        modelo: document.getElementById("modelo").value,
+        year: document.getElementById("year").value
+    };
+
+    if(editIndex !== null){
+        data[editIndex]=obj;
+    } else {
+        data.push(obj);
+    }
+
+    persist();
+    closeModal();
+    render();
+}
+
+function edit(i){
+    let d = data[i];
+    document.getElementById("placas").value=d.placas;
+    document.getElementById("marca").value=d.marca;
+    document.getElementById("modelo").value=d.modelo;
+    document.getElementById("year").value=d.year;
+
+    editIndex=i;
+    openModal();
+}
+
+function del(i){
+    data.splice(i,1);
+    persist();
+    render();
+}
+
+document.getElementById("search").addEventListener("input", render);
+
+render();
+</script>
+
+</body>
+</html>
