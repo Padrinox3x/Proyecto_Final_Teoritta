@@ -4,8 +4,8 @@ require('dotenv').config();
 
 const { sql, conectarDB } = require('./db');
 
-// 🔐 Middlewares propios
-//const { isAuthenticated } = require('./middlewares/auth');
+// 🔐 Middleware de autenticación
+const isAuthenticated = require('./middlewares/auth');
 
 // 🔥 Rutas
 const personalRoutes = require('./routes/personal.routes');
@@ -53,40 +53,40 @@ app.set('views', __dirname + '/views');
 /* =======================
    API ROUTES
 ======================= */
-app.use('/api/personal', require('./routes/personal'));
-app.use('/api/menu', require('./routes/menu'));
-app.use('/api/modulo', require('./routes/modulo'));
-app.use('/api/perfil', require('./routes/perfil'));
-app.use('/api/usuarios', require('./routes/usuarios'));
-app.use('/api/permisosPerfil', require('./routes/permisosPerfil'));
+app.use('/api/personal', personalRoutes);
+app.use('/api/menu', menuRoutes);
+app.use('/api/modulo', moduloRoutes);
+app.use('/api/perfil', perfilRoutes);
+app.use('/api/usuario', usuarioRoutes);
+app.use('/api/permisosPerfil', permisosRoutes);
 
 // 🔐 AUTH
 app.use('/auth', authRoutes);
 
 /* =======================
-   VISTAS (PROTEGIDAS)
+   VISTAS
 ======================= */
 
-// LOGIN
+// 🔑 LOGIN (pantalla principal)
 app.get('/login', (req, res) => {
     res.render('login');
 });
 
-// LOGOUT
+// 🔒 LOGOUT
 app.get('/logout', (req, res) => {
     req.session.destroy(() => {
         res.redirect('/login');
     });
 });
 
-// DASHBOARD
+// 🏠 DASHBOARD
 app.get('/dashboard', isAuthenticated, (req, res) => {
-    res.render('dashboard', {
+    res.render('menu', {
         user: req.session.user
     });
 });
 
-// CRUDS
+// 📦 CRUDS
 app.get('/personal', isAuthenticated, (req, res) => {
     res.render('personal');
 });
@@ -103,8 +103,8 @@ app.get('/perfil', isAuthenticated, (req, res) => {
     res.render('perfil');
 });
 
-app.get('/usuarios', isAuthenticated, (req, res) => {
-    res.render('usuarios');
+app.get('/usuario', isAuthenticated, (req, res) => {
+    res.render('usuario');
 });
 
 app.get('/permisos', isAuthenticated, (req, res) => {
@@ -112,11 +112,11 @@ app.get('/permisos', isAuthenticated, (req, res) => {
 });
 
 /* =======================
-   HOME
+   HOME (REDIRECCIÓN)
 ======================= */
 app.get('/', (req, res) => {
     if (!req.session.user) {
-        return res.redirect('/login');
+        return res.redirect('/login'); // 👈 inicia en login
     }
     res.redirect('/dashboard');
 });
