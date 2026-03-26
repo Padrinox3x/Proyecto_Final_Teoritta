@@ -7,8 +7,7 @@ const { sql, conectarDB } = require('./db');
 // 🔐 Middleware de autenticación
 const isAuthenticated = require('./middlewares/auth');
 
-// 🔥 Rutas
-const personalRoutes = require('./routes/personal.routes');
+// 🔥 Rutas (solo las que SÍ existen)
 const menuRoutes = require('./routes/menu.routes');
 const moduloRoutes = require('./routes/modulo.routes');
 const perfilRoutes = require('./routes/perfil.routes');
@@ -53,7 +52,6 @@ app.set('views', __dirname + '/views');
 /* =======================
    API ROUTES
 ======================= */
-app.use('/api/personal', personalRoutes);
 app.use('/api/menu', menuRoutes);
 app.use('/api/modulo', moduloRoutes);
 app.use('/api/perfil', perfilRoutes);
@@ -67,7 +65,7 @@ app.use('/auth', authRoutes);
    VISTAS
 ======================= */
 
-// 🔑 LOGIN (pantalla principal)
+// 🔑 LOGIN
 app.get('/login', (req, res) => {
     res.render('login');
 });
@@ -86,11 +84,7 @@ app.get('/dashboard', isAuthenticated, (req, res) => {
     });
 });
 
-// 📦 CRUDS
-app.get('/personal', isAuthenticated, (req, res) => {
-    res.render('personal');
-});
-
+// 📦 CRUDS (solo los que tienes)
 app.get('/menu', isAuthenticated, (req, res) => {
     res.render('menu');
 });
@@ -112,11 +106,11 @@ app.get('/permisos', isAuthenticated, (req, res) => {
 });
 
 /* =======================
-   HOME (REDIRECCIÓN)
+   HOME
 ======================= */
 app.get('/', (req, res) => {
     if (!req.session.user) {
-        return res.redirect('/login'); // 👈 inicia en login
+        return res.redirect('/login');
     }
     res.redirect('/dashboard');
 });
