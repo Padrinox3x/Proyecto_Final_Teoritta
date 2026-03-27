@@ -19,9 +19,9 @@ document.getElementById('formLogin').addEventListener('submit', async (e) => {
     const result = await res.json();
 
     if (result.ok) {
-        window.location.href = '/dashboard'; // o tu vista principal
-    } else {
-        alert(result.msg || '❌ Error al iniciar sesión');
-        grecaptcha.reset();
-    }
+    window.location.href = '/breadcrums/';
+} else {
+    alert(result.msg || '❌ Error al iniciar sesión');
+    grecaptcha.reset();
+}
 });
