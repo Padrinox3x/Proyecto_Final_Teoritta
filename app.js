@@ -25,6 +25,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static('public'));
 
+
 // 🔐 SESIÓN
 app.use(session({
     secret: 'sistema_seguro_123',
