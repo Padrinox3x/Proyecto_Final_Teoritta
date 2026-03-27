@@ -19,7 +19,7 @@ document.getElementById('formLogin').addEventListener('submit', async (e) => {
     const result = await res.json();
 
     if (result.ok) {
-    window.location.href = '/breadcrums/';
+    window.location.href = './public/breadcrums.html';
 } else {
     alert(result.msg || '❌ Error al iniciar sesión');
     grecaptcha.reset();
