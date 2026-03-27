@@ -21,7 +21,7 @@ document.getElementById('formLogin').addEventListener('submit', async (e) => {
   if (result.ok) {
     window.location.href = '/breadcrums.html';
 } else {
-    alert(result.msg || '❌ Error al iniciar sesión');
     grecaptcha.reset();
+    window.location.href = '/404.html';
 }
 });
