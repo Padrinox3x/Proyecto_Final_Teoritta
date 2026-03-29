@@ -18,7 +18,12 @@ router.get('/', async (req, res) => {
             .input('limit', sql.Int, limit)
             .query(`
                 SELECT 
-                    u.*,
+                    u.idUsuario,
+                    u.strNombreUsuario,
+                    u.strCorreo,
+                    u.strCelular,
+                    u.estadoUsuario,
+                    u.Perfil,
                     p.strNombrePerfil AS NombrePerfil
                 FROM Modulo_Usuario u
                 INNER JOIN Modulo_Perfil p ON u.Perfil = p.idPerfil
@@ -54,7 +59,7 @@ router.post('/', async (req, res) => {
             .input('strNombreUsuario', sql.NVarChar, strNombreUsuario)
             .input('Perfil', sql.Int, Perfil)
             .input('strPwd', sql.NVarChar, strPwd)
-            .input('estadoUsuario', sql.Bit, estadoUsuario)
+            .input('estadoUsuario', sql.Bit, parseInt(estadoUsuario))
             .input('strCorreo', sql.NVarChar, strCorreo)
             .input('strCelular', sql.NVarChar, strCelular)
             .query(`
@@ -67,7 +72,7 @@ router.post('/', async (req, res) => {
         res.json({ ok: true });
 
     } catch (error) {
-        console.error('🔥 Error al crear usuario:', error);
+        console.error('🔥 Error crear usuario:', error);
         res.status(500).json({ ok: false, error: error.message });
     }
 });
@@ -85,7 +90,7 @@ router.put('/:id', async (req, res) => {
             .input('strNombreUsuario', sql.NVarChar, strNombreUsuario)
             .input('Perfil', sql.Int, Perfil)
             .input('strPwd', sql.NVarChar, strPwd)
-            .input('estadoUsuario', sql.Bit, estadoUsuario)
+            .input('estadoUsuario', sql.Bit, parseInt(estadoUsuario))
             .input('strCorreo', sql.NVarChar, strCorreo)
             .input('strCelular', sql.NVarChar, strCelular)
             .query(`
@@ -102,7 +107,7 @@ router.put('/:id', async (req, res) => {
         res.json({ ok: true });
 
     } catch (error) {
-        console.error('🔥 Error al actualizar usuario:', error);
+        console.error('🔥 Error update usuario:', error);
         res.status(500).json({ ok: false, error: error.message });
     }
 });
@@ -119,7 +124,7 @@ router.delete('/:id', async (req, res) => {
         res.json({ ok: true });
 
     } catch (error) {
-        console.error('🔥 Error al eliminar usuario:', error);
+        console.error('🔥 Error delete usuario:', error);
         res.status(500).json({ ok: false, error: error.message });
     }
 });
