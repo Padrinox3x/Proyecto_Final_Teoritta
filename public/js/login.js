@@ -26,6 +26,10 @@ document.getElementById('formLogin').addEventListener('submit', async (e) => {
         }
 
     } catch (error) {
-        console.error('ERROR FETCH:', error);
-    }
+    console.error('💥 ERROR LOGIN DETALLADO:', error);
+    res.status(500).json({ 
+        ok: false, 
+        msg: error.message // 🔥 esto nos dirá EXACTO qué falla
+    });
+}
 });
