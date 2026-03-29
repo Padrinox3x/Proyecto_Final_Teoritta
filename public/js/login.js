@@ -5,6 +5,10 @@ document.getElementById('formLogin').addEventListener('submit', async (e) => {
     const password = document.getElementById('password').value.trim();
     const captcha = grecaptcha.getResponse();
 
+    console.log('USUARIO:', usuario);
+console.log('PASSWORD:', password);
+console.log('RESULTADO SQL:', result.recordset);
+
     if (!captcha) {
         alert('❌ Verifica el reCAPTCHA');
         return;
