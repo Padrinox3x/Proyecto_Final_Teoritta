@@ -26,11 +26,18 @@ app.use(express.json());
 app.use(express.static('public'));
 
 
-// 🔐 SESIÓN
+app.set('trust proxy', 1);
+
 app.use(session({
     secret: 'sistema_seguro_123',
     resave: false,
-    saveUninitialized: false
+    saveUninitialized: false,
+    proxy: true,
+    cookie: {
+        secure: true,       
+        httpOnly: true,
+        sameSite: 'none'  
+    }
 }));
 
 // 📄 VISTAS
