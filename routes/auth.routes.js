@@ -14,18 +14,18 @@ router.post('/login', async (req, res) => {
             .input('usuario', sql.NVarChar, usuario)
             .input('password', sql.NVarChar, password)
             .query(`
-                SELECT 
-                    u.idUsuario,
-                    u.strNombreUsuario,
-                    u.Perfil,
-                    p.strNombrePerfil,
-                    p.bitAdministrador
-                FROM Usuario u
-                INNER JOIN ModuloPerfil p ON u.Perfil = p.idPerfil
+                 SELECT 
+                 u.idUsuario,
+                 u.strNombreUsuario,
+                 u.Perfil,
+                 p.strNombrePerfil,
+                 p.bitAdministrador
+                FROM dbo.Modulo_Usuario u
+                INNER JOIN dbo.ModuloPerfil p ON u.Perfil = p.idPerfil
                 WHERE u.strNombreUsuario = @usuario
-                  AND u.strPwd = @password
-                  AND u.estadoUsuario = 1
-            `);
+                AND u.strPwd = @password
+                AND u.estadoUsuario = 1
+`);
 
         console.log('RESULTADO SQL:', result.recordset);
 
