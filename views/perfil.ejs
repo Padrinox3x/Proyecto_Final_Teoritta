@@ -7,69 +7,72 @@
 </head>
 <body>
 
-<div class="toolbar">
-    <input type="text" id="buscar" placeholder="Buscar...">
-    <select id="limit">
-        <option value="5">5</option>
-        <option value="10" selected>10</option>
-        <option value="20">20</option>
-    </select>
-    <button id="btnNuevo">➕</button>
-</div>
+<div class="container">
 
-<table>
-<thead>
-<tr>
-    <th>Nombre Perfil</th>
-    <th>Administrador</th>
-    <th>Acciones</th>
-</tr>
-</thead>
-<tbody id="tablaPerfil"></tbody>
-</table>
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+        <input type="text" id="buscar" placeholder="Buscar perfil...">
 
-<div class="paginacion">
-    <button id="first">⏮</button>
-    <button id="prev">◀</button>
-    <span id="pagina"></span>
-    <button id="next">▶</button>
-    <button id="last">⏭</button>
+        <select id="limit">
+            <option value="5">5</option>
+            <option value="10" selected>10</option>
+            <option value="20">20</option>
+        </select>
+
+        <button id="btnNuevo">➕ Nuevo</button>
+    </div>
+
+    <!-- TABLA -->
+    <table>
+        <thead>
+            <tr>
+                <th>Nombre Perfil</th>
+                <th>Administrador</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="tablaPerfil"></tbody>
+    </table>
+
+    <!-- PAGINACIÓN -->
+    <div class="paginacion">
+        <button id="first">⏮</button>
+        <button id="prev">◀</button>
+        <span id="pagina"></span>
+        <button id="next">▶</button>
+        <button id="last">⏭</button>
+    </div>
+
 </div>
 
 <!-- MODAL -->
 <div id="modal" class="modal">
     <div class="modal-content">
-        <h3>Registrar Perfil</h3>
+
+        <h2>Perfil</h2>
 
         <form id="formPerfil">
+
             <input type="hidden" id="id">
 
-            <input id="strNombrePerfil" placeholder="Nombre del perfil" required>
+            <label>Nombre del perfil</label>
+            <input id="strNombrePerfil" required>
 
-            <select id="bitAdministrador">
-                <option value="1">Administrador</option>
-                <option value="0">Usuario</option>
-            </select>
+            <label class="check">
+                <input type="checkbox" id="bitAdministrador">
+                Es Administrador
+            </label>
 
-            <button type="submit">Guardar</button>
-            <button type="button" id="btnCancelar">Cancelar</button>
+            <div class="acciones">
+                <button type="submit">Guardar</button>
+                <button type="button" id="btnCancelar">Cancelar</button>
+            </div>
+
         </form>
     </div>
 </div>
 
 <script src="/js/perfil.js"></script>
-
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-    const nombre = document.getElementById('strNombrePerfil');
-
-    nombre.addEventListener('input', () => {
-        if (nombre.value.length > 100) {
-            nombre.value = nombre.value.slice(0, 100);
-        }
-    });
-});
-</script>
 
 </body>
 </html>

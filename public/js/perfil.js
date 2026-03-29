@@ -57,10 +57,10 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
 
             tr.querySelector('.editar').onclick = () => {
-                document.getElementById('id').value = p.idPerfil;
-                document.getElementById('strNombrePerfil').value = p.strNombrePerfil;
-                document.getElementById('bitAdministrador').value = p.bitAdministrador ? 1 : 0;
-                abrirModal();
+            document.getElementById('id').value = p.idPerfil;
+            document.getElementById('strNombrePerfil').value = p.strNombrePerfil;
+            document.getElementById('bitAdministrador').checked = p.bitAdministrador;
+            abrirModal();
             };
 
             tr.querySelector('.eliminar').onclick = async () => {
@@ -106,9 +106,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const id = document.getElementById('id').value;
 
         const data = {
-            strNombrePerfil: document.getElementById('strNombrePerfil').value.trim(),
-            bitAdministrador: document.getElementById('bitAdministrador').value
-        };
+        strNombrePerfil: document.getElementById('strNombrePerfil').value.trim(),
+        bitAdministrador: document.getElementById('bitAdministrador').checked ? 1 : 0
+       };
 
         const url = id ? `/api/perfil/${id}` : '/api/perfil';
         const method = id ? 'PUT' : 'POST';
