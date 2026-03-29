@@ -22,9 +22,9 @@ router.post('/login', async (req, res) => {
 
         const captchaData = await captchaRes.json();
 
-       // if (!captchaData.success) {
-//     return res.json({ ok: false, msg: 'Captcha inválido' });
-// }
+       if (!captchaData.success) {
+       return res.json({ ok: false, msg: 'Captcha inválido' });
+       }
 
         /* =======================
            LOGIN DB

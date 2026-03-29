@@ -3,30 +3,29 @@ document.getElementById('formLogin').addEventListener('submit', async (e) => {
 
     const usuario = document.getElementById('usuario').value.trim();
     const password = document.getElementById('password').value.trim();
-    const captcha = grecaptcha.getResponse();
 
     console.log('USUARIO:', usuario);
-console.log('PASSWORD:', password);
-console.log('RESULTADO SQL:', result.recordset);
+    console.log('PASSWORD:', password);
 
-    if (!captcha) {
-        alert('❌ Verifica el reCAPTCHA');
-        return;
-    }
+    try {
+        const res = await fetch('/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ usuario, password, captcha: "" }) // sin captcha
+        });
 
-    const res = await fetch('/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', 
-        body: JSON.stringify({ usuario, password, captcha })
-    });
+        const result = await res.json(); // 🔥 AQUÍ se crea
 
-    const result = await res.json();
+        console.log('RESPUESTA:', result);
 
-    if (result.ok) {
-        window.location.href = '/breadcrums'; 
-    } else {
-        grecaptcha.reset();
-        window.location.href = '/404.html';
+        if (result.ok) {
+            window.location.href = '/breadcrums';
+        } else {
+            alert(result.msg || 'Error en login');
+        }
+
+    } catch (error) {
+        console.error('ERROR FETCH:', error);
     }
 });
