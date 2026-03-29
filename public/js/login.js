@@ -13,15 +13,16 @@ document.getElementById('formLogin').addEventListener('submit', async (e) => {
     const res = await fetch('/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', 
         body: JSON.stringify({ usuario, password, captcha })
     });
 
     const result = await res.json();
 
-  if (result.ok) {
-    window.location.href = '/Principal_1.1.html';
-} else {
-    grecaptcha.reset();
-    window.location.href = '/404.html';
-}
+    if (result.ok) {
+        window.location.href = '/dashboard'; // 🔥 mejor que HTML directo
+    } else {
+        grecaptcha.reset();
+        window.location.href = '/404.html';
+    }
 });
