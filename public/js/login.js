@@ -12,10 +12,10 @@ document.getElementById('formLogin').addEventListener('submit', async (e) => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             credentials: 'include',
-            body: JSON.stringify({ usuario, password, captcha: "" }) // sin captcha
+            body: JSON.stringify({ usuario, password, captcha: "" })
         });
 
-        const result = await res.json(); // 🔥 AQUÍ se crea
+        const result = await res.json();
 
         console.log('RESPUESTA:', result);
 
@@ -26,10 +26,7 @@ document.getElementById('formLogin').addEventListener('submit', async (e) => {
         }
 
     } catch (error) {
-    console.error('💥 ERROR LOGIN DETALLADO:', error);
-    res.status(500).json({ 
-        ok: false, 
-        msg: error.message // 🔥 esto nos dirá EXACTO qué falla
-    });
-}
+        console.error('💥 ERROR FETCH:', error);
+        alert('Error de conexión con el servidor');
+    }
 });

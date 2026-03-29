@@ -42,9 +42,13 @@ router.post('/login', async (req, res) => {
         res.json({ ok: true });
 
     } catch (error) {
-        console.error('💥 ERROR LOGIN:', error);
-        res.status(500).json({ ok: false, msg: 'Error servidor' });
-    }
+    console.error('💥 ERROR LOGIN DETALLADO:', error);
+
+    res.status(500).json({ 
+        ok: false, 
+        msg: error.message // 🔥 AQUÍ VERÁS EL ERROR REAL
+    });
+}
 });
 
 module.exports = router;
