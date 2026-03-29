@@ -86,10 +86,8 @@ app.get('/logout', (req, res) => {
 });
 
 // 🏠 DASHBOARD
-app.get('/dashboard', isAuthenticated, (req, res) => {
-    res.render('menu', {
-        user: req.session.user
-    });
+app.get('/breadcrums', isAuthenticated, (req, res) => {
+    res.sendFile(__dirname + '/public/breadcrums.html');
 });
 
 // 📦 CRUDS (solo los que tienes)
