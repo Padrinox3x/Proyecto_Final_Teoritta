@@ -18,7 +18,7 @@ router.get('/', async (req, res) => {
             .input('limit', sql.Int, limit)
             .query(`
                 SELECT *
-                FROM ModuloPerfil
+                FROM Modulo_Perfil
                 WHERE strNombrePerfil LIKE @buscar
                 ORDER BY idPerfil DESC
                 OFFSET @offset ROWS
@@ -51,7 +51,7 @@ router.post('/', async (req, res) => {
             .input('strNombrePerfil', sql.NVarChar, strNombrePerfil)
             .input('bitAdministrador', sql.Bit, bitAdministrador)
             .query(`
-                INSERT INTO ModuloPerfil (strNombrePerfil, bitAdministrador)
+                INSERT INTO Modulo_Perfil (strNombrePerfil, bitAdministrador)
                 VALUES (@strNombrePerfil, @bitAdministrador)
             `);
 
@@ -73,7 +73,7 @@ router.put('/:id', async (req, res) => {
             .input('strNombrePerfil', sql.NVarChar, req.body.strNombrePerfil)
             .input('bitAdministrador', sql.Bit, req.body.bitAdministrador)
             .query(`
-                UPDATE ModuloPerfil SET
+                UPDATE Modulo_Perfil SET
                     strNombrePerfil = @strNombrePerfil,
                     bitAdministrador = @bitAdministrador
                 WHERE idPerfil = @id
@@ -94,7 +94,7 @@ router.delete('/:id', async (req, res) => {
 
         await pool.request()
             .input('id', sql.Int, req.params.id)
-            .query('DELETE FROM ModuloPerfil WHERE idPerfil = @id');
+            .query('DELETE FROM Modulo_Perfil WHERE idPerfil = @id');
 
         res.json({ ok: true });
 
