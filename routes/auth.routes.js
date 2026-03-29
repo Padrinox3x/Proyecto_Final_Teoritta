@@ -21,7 +21,7 @@ router.post('/login', async (req, res) => {
                  p.strNombrePerfil,
                  p.bitAdministrador
                 FROM dbo.Modulo_Usuario u
-                INNER JOIN dbo.ModuloPerfil p ON u.Perfil = p.idPerfil
+                INNER JOIN dbo.Modulo_Perfil p ON u.Perfil = p.idPerfil
                 WHERE u.strNombreUsuario = @usuario
                 AND u.strPwd = @password
                 AND u.estadoUsuario = 1
