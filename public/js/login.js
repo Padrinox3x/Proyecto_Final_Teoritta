@@ -20,7 +20,7 @@ document.getElementById('formLogin').addEventListener('submit', async (e) => {
     const result = await res.json();
 
     if (result.ok) {
-        window.location.href = '/dashboard'; // 🔥 mejor que HTML directo
+        window.location.href = '/breadcrums'; 
     } else {
         grecaptcha.reset();
         window.location.href = '/404.html';
