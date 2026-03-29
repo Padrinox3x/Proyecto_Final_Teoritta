@@ -19,7 +19,7 @@ document.getElementById('formLogin').addEventListener('submit', async (e) => {
     const result = await res.json();
 
   if (result.ok) {
-    window.location.href = '/breadcrums.html';
+    window.location.href = '/Principal_1.1.html';
 } else {
     grecaptcha.reset();
     window.location.href = '/404.html';
