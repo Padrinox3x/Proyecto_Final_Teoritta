@@ -1,34 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const fetch = require('node-fetch');
 const { sql, conectarDB } = require('../db');
-
-const SECRET_KEY = '6Lc9wUQsAAAAAFTuSFxoK12ZbCVwoJBP_nBtXZI-'; // ⚠️ cambia esto
 
 router.post('/login', async (req, res) => {
     try {
-        const { usuario, password, captcha } = req.body;
+        const { usuario, password } = req.body;
 
-        /* =======================
-           VALIDAR CAPTCHA
-        ======================= */
-        const verifyUrl = `https://www.google.com/recaptcha/api/siteverify`;
+        console.log('LOGIN INTENTO:', usuario, password);
 
-        const captchaRes = await fetch(verifyUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: `secret=${SECRET_KEY}&response=${captcha}`
-        });
-
-        const captchaData = await captchaRes.json();
-
-       if (!captchaData.success) {
-       return res.json({ ok: false, msg: 'Captcha inválido' });
-       }
-
-        /* =======================
-           LOGIN DB
-        ======================= */
         const pool = await conectarDB();
 
         const result = await pool.request()
@@ -48,6 +27,8 @@ router.post('/login', async (req, res) => {
                   AND u.estadoUsuario = 1
             `);
 
+        console.log('RESULTADO SQL:', result.recordset);
+
         if (result.recordset.length === 0) {
             return res.json({ ok: false, msg: 'Credenciales incorrectas' });
         }
@@ -56,11 +37,13 @@ router.post('/login', async (req, res) => {
 
         req.session.user = user;
 
+        console.log('✅ LOGIN OK');
+
         res.json({ ok: true });
 
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ ok: false });
+        console.error('💥 ERROR LOGIN:', error);
+        res.status(500).json({ ok: false, msg: 'Error servidor' });
     }
 });
 
