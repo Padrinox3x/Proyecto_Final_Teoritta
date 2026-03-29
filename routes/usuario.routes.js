@@ -21,13 +21,13 @@ router.get('/', async (req, res) => {
                     u.*,
                     p.strNombrePerfil AS NombrePerfil
                 FROM Usuario u
-                INNER JOIN ModuloPerfil p ON u.Perfil = p.idPerfil
+                INNER JOIN Modulo_Perfil p ON u.Perfil = p.idPerfil
                 WHERE u.strNombreUsuario LIKE @buscar
                 ORDER BY u.idUsuario DESC
                 OFFSET @offset ROWS
                 FETCH NEXT @limit ROWS ONLY;
                 SELECT COUNT(*) AS total
-                FROM Usuario
+                FROM Modulo_Usuario
                 WHERE strNombreUsuario LIKE @buscar;`);
         res.json({
             data: result.recordsets[0],

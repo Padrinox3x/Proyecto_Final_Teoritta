@@ -25,7 +25,7 @@ router.get('/', async (req, res) => {
                 FETCH NEXT @limit ROWS ONLY;
 
                 SELECT COUNT(*) AS total
-                FROM ModuloPerfil
+                FROM Modulo_Perfil
                 WHERE strNombrePerfil LIKE @buscar;
             `);
 

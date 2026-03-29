@@ -22,7 +22,7 @@ router.get('/:idPerfil', async (req, res) => {
                     ISNULL(p.bitEliminar, 0) bitEliminar,
                     ISNULL(p.bitDetalle, 0) bitDetalle
                 FROM Modulo m
-                LEFT JOIN permisosPerfil p 
+                LEFT JOIN Modulo_permisosPerfil p 
                     ON m.idModulo = p.Modulo 
                     AND p.Perfil = @idPerfil
                 ORDER BY m.idModulo

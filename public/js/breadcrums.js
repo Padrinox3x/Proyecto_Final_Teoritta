@@ -17,3 +17,6 @@ function activarMenu() {
         });
     });
 }
+
+// 🔥 ESTO FALTABA
+document.addEventListener("DOMContentLoaded", activarMenu);
