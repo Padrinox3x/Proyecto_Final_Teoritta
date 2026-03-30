@@ -3,9 +3,15 @@ function activarMenu() {
 
     menus.forEach(menu => {
         menu.addEventListener("click", function(e){
-            e.preventDefault();
 
             const submenu = this.nextElementSibling;
+
+            // 🔥 SI NO TIENE SUBMENU → NO BLOQUEAR LINK
+            if(!submenu){
+                return; // deja que navegue normal
+            }
+
+            e.preventDefault();
 
             document.querySelectorAll(".submenu").forEach(sub => {
                 if(sub !== submenu){
@@ -18,5 +24,4 @@ function activarMenu() {
     });
 }
 
-// 🔥 ESTO FALTABA
 document.addEventListener("DOMContentLoaded", activarMenu);
