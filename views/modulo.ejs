@@ -3,38 +3,48 @@
 <head>
 <meta charset="UTF-8">
 <title>Módulos</title>
+
 <link rel="stylesheet" href="/css/personal.css">
+<link rel="stylesheet" href="/css/breadcrums.css"> 
 </head>
+
 <body>
 
-<div class="toolbar">
-    <input type="text" id="buscar" placeholder="Buscar...">
-    <select id="limit">
-        <option value="5">5</option>
-        <option value="10" selected>10</option>
-        <option value="20">20</option>
-    </select>
-    <button id="btnNuevo">➕</button>
+<%- include('partials/breadcrumb') %>
+
+<div class="container"> <!-- 👈 mejora visual -->
+
+    <div class="toolbar">
+        <input type="text" id="buscar" placeholder="Buscar...">
+        <select id="limit">
+            <option value="5">5</option>
+            <option value="10" selected>10</option>
+            <option value="20">20</option>
+        </select>
+        <button id="btnNuevo">➕</button>
+    </div>
+
+    <table>
+        <thead>
+        <tr>
+            <th>Nombre Módulo</th>
+            <th>Acciones</th>
+        </tr>
+        </thead>
+        <tbody id="tablaModulo"></tbody>
+    </table>
+
+    <div class="paginacion">
+        <button id="first">⏮</button>
+        <button id="prev">◀</button>
+        <span id="pagina"></span>
+        <button id="next">▶</button>
+        <button id="last">⏭</button>
+    </div>
+
 </div>
 
-<table>
-<thead>
-<tr>
-    <th>Nombre Módulo</th>
-    <th>Acciones</th>
-</tr>
-</thead>
-<tbody id="tablaModulo"></tbody>
-</table>
-
-<div class="paginacion">
-    <button id="first">⏮</button>
-    <button id="prev">◀</button>
-    <span id="pagina"></span>
-    <button id="next">▶</button>
-    <button id="last">⏭</button>
-</div>
-
+<!-- MODAL -->
 <div id="modal" class="modal">
     <div class="modal-content">
         <h3>Registrar Módulo</h3>
@@ -49,6 +59,8 @@
     </div>
 </div>
 
+<script src="/js/breadcrums.js"></script> <!-- 👈 AQUÍ -->
 <script src="/js/modulo.js"></script>
+
 </body>
 </html>
