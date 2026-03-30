@@ -1,6 +1,6 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-    fetch("/breadcrum.html") // tu archivo del menú
+    fetch("/Principal_1.1.html") // tu archivo del menú
         .then(res => res.text())
         .then(html => {
 
