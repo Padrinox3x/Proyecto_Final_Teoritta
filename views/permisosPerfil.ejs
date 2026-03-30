@@ -4,8 +4,11 @@
 <meta charset="UTF-8">
 <title>Permisos por Perfil</title>
 <link rel="stylesheet" href="/css/personal.css">
+<link rel="stylesheet" href="/css/breadcrums.css"> 
 </head>
 <body>
+
+<%- include('partials/breadcrumb') %>
 
 <div class="toolbar">
     <select id="perfilSelect"></select>
@@ -29,6 +32,7 @@
     <button id="btnGuardar">💾 Guardar Cambios</button>
 </div>
 
+<script src="/js/breadcrums.js"></script> 
 <script src="/js/permisosPerfil.js"></script>
 </body>
 </html>

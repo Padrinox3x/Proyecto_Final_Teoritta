@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <link rel="stylesheet" href="./css/Principal_1.1.css">
+<link rel="stylesheet" href="css/breadcrums.css">
 <title>CRUD Transportes</title>
 </head>
 <body>
@@ -33,6 +34,9 @@
 <button onclick="save()">Guardar</button>
 <button onclick="closeModal()">Cancelar</button>
 </div>
+
+<script src="menu.js"></script>
+<script src="breadcrumb.js"></script>
 
 <script>
 let data = JSON.parse(localStorage.getItem("transportes")) || [];

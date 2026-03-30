@@ -4,8 +4,11 @@
 <meta charset="UTF-8">
 <title>Usuarios</title>
 <link rel="stylesheet" href="/css/personal.css">
+<link rel="stylesheet" href="/css/breadcrums.css"> 
 </head>
 <body>
+
+<%- include('partials/breadcrumb') %>
 
 <div class="toolbar">
     <input type="text" id="buscar" placeholder="Buscar...">
@@ -63,6 +66,9 @@
         </form>
     </div>
 </div>
+
+
+<script src="/js/breadcrums.js"></script> 
 
 <script src="/js/usuario.js"></script>
 
