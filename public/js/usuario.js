@@ -41,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btnCancelar.addEventListener('click', cerrarModal);
 
     /* =======================
-       CARGAR PERFILES (FK)
+       CARGAR PERFILES
     ======================= */
     async function cargarPerfilesSelect(selected = null) {
         const res = await fetch('/api/perfil?limit=100&page=1');
@@ -69,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
     async function cargarUsuarios() {
         const buscar = inputBuscar.value.trim();
 
-        const res = await fetch(`/api/usuarios?buscar=${buscar}&limit=${limit}&page=${page}`);
+        const res = await fetch(`/api/usuario?buscar=${buscar}&limit=${limit}&page=${page}`);
         const result = await res.json();
 
         tabla.innerHTML = '';
@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             tr.innerHTML = `
                 <td>${u.strNombreUsuario}</td>
-                <td>${u.NombrePerfil || u.Perfil}</td>
+                <td>${u.NombrePerfil || ''}</td>
                 <td>${u.strCorreo || ''}</td>
                 <td>${u.strCelular || ''}</td>
                 <td>${u.estadoUsuario ? 'Activo' : 'Inactivo'}</td>
@@ -93,20 +93,19 @@ document.addEventListener('DOMContentLoaded', () => {
             tr.querySelector('.editar').addEventListener('click', async () => {
                 document.getElementById('id').value = u.idUsuario;
                 document.getElementById('strNombreUsuario').value = u.strNombreUsuario;
-                document.getElementById('strPwd').value = u.strPwd;
-                document.getElementById('strCorreo').value = u.strCorreo;
-                document.getElementById('strCelular').value = u.strCelular;
+                document.getElementById('strPwd').value = u.strPwd || '';
+                document.getElementById('strCorreo').value = u.strCorreo || '';
+                document.getElementById('strCelular').value = u.strCelular || '';
                 document.getElementById('estadoUsuario').value = u.estadoUsuario ? 1 : 0;
 
                 await cargarPerfilesSelect(u.Perfil);
-
                 abrirModal();
             });
 
             // ELIMINAR
             tr.querySelector('.eliminar').addEventListener('click', async () => {
                 if (!confirm('¿Eliminar usuario?')) return;
-                await fetch(`/api/usuarios/${u.idUsuario}`, { method: 'DELETE' });
+                await fetch(`/api/usuario/${u.idUsuario}`, { method: 'DELETE' });
                 cargarUsuarios();
             });
 
@@ -160,11 +159,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const data = {
             strNombreUsuario: document.getElementById('strNombreUsuario').value.trim(),
-            Perfil: document.getElementById('Perfil').value,
+            Perfil: parseInt(document.getElementById('Perfil').value),
             strPwd: document.getElementById('strPwd').value,
             strCorreo: document.getElementById('strCorreo').value,
             strCelular: document.getElementById('strCelular').value,
-            estadoUsuario: document.getElementById('estadoUsuario').value
+            estadoUsuario: parseInt(document.getElementById('estadoUsuario').value)
         };
 
         if (!data.Perfil) {
@@ -172,7 +171,7 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        const url = id ? `/api/usuarios/${id}` : '/api/usuarios';
+        const url = id ? `/api/usuario/${id}` : '/api/usuario';
         const method = id ? 'PUT' : 'POST';
 
         const res = await fetch(url, {

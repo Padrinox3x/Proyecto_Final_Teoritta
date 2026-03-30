@@ -83,11 +83,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    perfil.addEventListener('input', () => {
-        perfil.value = perfil.value.replace(/[^0-9]/g, '');
-        limitar(perfil, 5);
-    });
-
     celular.addEventListener('input', () => {
         celular.value = celular.value.replace(/[^0-9]/g, '');
         limitar(celular, 15);
