@@ -6,10 +6,7 @@ function activarMenu() {
 
             const submenu = this.nextElementSibling;
 
-            // 🔥 SI NO TIENE SUBMENU → NO BLOQUEAR LINK
-            if(!submenu){
-                return; // deja que navegue normal
-            }
+            if(!submenu) return;
 
             e.preventDefault();
 
@@ -24,16 +21,11 @@ function activarMenu() {
     });
 }
 
+/* CERRAR AL HACER CLICK FUERA */
 document.addEventListener("click", function(e){
-
-    // si el click NO fue dentro del menú
     if(!e.target.closest(".menu")){
-        
         document.querySelectorAll(".submenu").forEach(sub => {
             sub.classList.remove("activo");
         });
-
     }
 });
-
-document.addEventListener("DOMContentLoaded", activarMenu);
