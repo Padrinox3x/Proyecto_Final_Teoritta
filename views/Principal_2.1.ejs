@@ -3,14 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <link rel="stylesheet" href="./css/Principal_1.1.css">
-<link rel="stylesheet" href="css/breadcrums.css">
-<title>CRUD Sucursales</title>
+<link rel="stylesheet" href="/css/breadcrums.css"> 
+<title>CRUD Transportes</title>
 </head>
 <body>
 
 
-
-<h2>Sucursales</h2>
+<h2>Transportes</h2>
 
 <input type="text" id="search" placeholder="Buscar...">
 <button onclick="openModal()">Agregar</button>
@@ -18,9 +17,10 @@
 <table border="1">
 <thead>
 <tr>
-<th>Nombre</th>
-<th>Dirección</th>
-<th>Ciudad</th>
+<th>Placas</th>
+<th>Marca</th>
+<th>Modelo</th>
+<th>Año</th>
 <th>Acciones</th>
 </tr>
 </thead>
@@ -28,23 +28,22 @@
 </table>
 
 <div id="modal" style="display:none;">
-<input id="nombre" placeholder="Nombre">
-<input id="direccion" placeholder="Dirección">
-<input id="ciudad" placeholder="Ciudad">
+<input id="placas" placeholder="Placas">
+<input id="marca" placeholder="Marca">
+<input id="modelo" placeholder="Modelo">
+<input id="year" type="number" placeholder="Año">
 <button onclick="save()">Guardar</button>
 <button onclick="closeModal()">Cancelar</button>
 </div>
 
-
-<script src="breadcrumb.js"></script>
-<script src="menu.js"></script>
+<script src="/js/breadcrums.js"></script> 
 
 <script>
-let data = JSON.parse(localStorage.getItem("sucursales")) || [];
+let data = JSON.parse(localStorage.getItem("transportes")) || [];
 let editIndex = null;
 
 function persist(){
-    localStorage.setItem("sucursales", JSON.stringify(data));
+    localStorage.setItem("transportes", JSON.stringify(data));
 }
 
 function render(){
@@ -55,15 +54,16 @@ function render(){
 
     data
     .filter(d => 
-        d.nombre.toLowerCase().includes(search) ||
-        d.ciudad.toLowerCase().includes(search)
+        d.placas.toLowerCase().includes(search) ||
+        d.marca.toLowerCase().includes(search)
     )
     .forEach((d,i)=>{
         tbody.innerHTML += `
         <tr>
-            <td>${d.nombre}</td>
-            <td>${d.direccion}</td>
-            <td>${d.ciudad}</td>
+            <td>${d.placas}</td>
+            <td>${d.marca}</td>
+            <td>${d.modelo}</td>
+            <td>${d.year}</td>
             <td>
                 <button onclick="edit(${i})">Editar</button>
                 <button onclick="del(${i})">Eliminar</button>
@@ -82,17 +82,19 @@ function closeModal(){
 }
 
 function clear(){
-    document.getElementById("nombre").value="";
-    document.getElementById("direccion").value="";
-    document.getElementById("ciudad").value="";
+    document.getElementById("placas").value="";
+    document.getElementById("marca").value="";
+    document.getElementById("modelo").value="";
+    document.getElementById("year").value="";
     editIndex=null;
 }
 
 function save(){
     let obj = {
-        nombre: document.getElementById("nombre").value,
-        direccion: document.getElementById("direccion").value,
-        ciudad: document.getElementById("ciudad").value
+        placas: document.getElementById("placas").value,
+        marca: document.getElementById("marca").value,
+        modelo: document.getElementById("modelo").value,
+        year: document.getElementById("year").value
     };
 
     if(editIndex !== null){
@@ -108,9 +110,10 @@ function save(){
 
 function edit(i){
     let d = data[i];
-    document.getElementById("nombre").value=d.nombre;
-    document.getElementById("direccion").value=d.direccion;
-    document.getElementById("ciudad").value=d.ciudad;
+    document.getElementById("placas").value=d.placas;
+    document.getElementById("marca").value=d.marca;
+    document.getElementById("modelo").value=d.modelo;
+    document.getElementById("year").value=d.year;
 
     editIndex=i;
     openModal();
