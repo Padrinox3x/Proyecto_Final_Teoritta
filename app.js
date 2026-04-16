@@ -111,19 +111,19 @@ app.get('/permisos', isAuthenticated, (req, res) => {
     res.render('permisosPerfil');
 });
 
-app.get('/Principal_1.1', (req, res) => {
+app.get('/Principal_1.1', isAuthenticated, (req, res) => {
     res.render('Principal_1.1');
 });
 
-app.get('/Principal_1.2', (req, res) => {
+app.get('/Principal_1.2', isAuthenticated, (req, res) => {
     res.render('Principal_1.2');
 });
 
-app.get('/Principal_2.1', (req, res) => {
+app.get('/Principal_2.1', isAuthenticated, (req, res) => {
     res.render('Principal_2.1');
 });
 
-app.get('/Principal_2.2', (req, res) => {
+app.get('/Principal_2.2', isAuthenticated, (req, res) => {
     res.render('Principal_2.2');
 });
 
