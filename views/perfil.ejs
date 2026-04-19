@@ -46,7 +46,7 @@
         <button id="last">⏭</button>
     </div>
 
-
+</div>
 
 <!-- MODAL -->
 <div id="modal" class="modal">
@@ -59,7 +59,14 @@
             <input type="hidden" id="id">
 
             <label>Nombre del perfil</label>
-            <input id="strNombrePerfil" required>
+            <input id="strNombrePerfil" 
+            name="strNombrePerfil"
+            type="text"
+            required 
+            maxlength="50" 
+            pattern="^[A-Za-zÁ-ú\s]+$" 
+            title="Solo se permiten letras y espacios (máximo 50 caracteres)"
+            autocomplete="off">
 
             <label class="check">
                 <input type="checkbox" id="bitAdministrador">
@@ -74,7 +81,7 @@
         </form>
     </div>
 </div>
-</div>
+
 <script src="/js/breadcrums.js"></script> 
 <script src="/js/perfil.js"></script>
 <script>
