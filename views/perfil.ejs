@@ -59,13 +59,15 @@
             <input type="hidden" id="id">
 
             <label>Nombre del perfil</label>
-            <input id="strNombrePerfil" 
+            <input 
+            id="strNombrePerfil" 
             name="strNombrePerfil"
             type="text"
             required 
             maxlength="50" 
             pattern="^[A-Za-zÁ-ú\s]+$" 
-            title="Solo se permiten letras y espacios (máximo 50 caracteres)"
+            title="Solo se permiten letras y espacios"
+            oninput="this.value = this.value.replace(/[0-9]/g, '')"
             autocomplete="off">
 
             <label class="check">
