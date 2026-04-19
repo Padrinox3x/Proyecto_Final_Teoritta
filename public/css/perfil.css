@@ -160,14 +160,21 @@ th:nth-child(3), td:nth-child(3) {
 ====================== */
 .modal {
     position: fixed;
-    inset: 0; /* modern top/left/right/bottom: 0 */
+    inset: 0;
     background: rgba(15, 23, 42, 0.7);
     backdrop-filter: blur(4px);
-    display: none; /* Se controla por JS */
+    
+    /* CAMBIO CLAVE: Usa display none por defecto */
+    display: none; 
+    
     justify-content: center;
     align-items: center;
     z-index: 1000;
     padding: 1rem;
+}
+
+.modal.activo {
+    display: flex;
 }
 
 .modal-content {
