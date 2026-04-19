@@ -51,6 +51,12 @@ app.use(session({
     }
 }));
 
+app.use((req, res, next) => {
+    // res.locals hace que 'user' esté disponible en todos los .ejs automáticamente
+    res.locals.user = req.session.user || null;
+    next();
+});
+
 // 📄 VISTAS
 app.set('view engine', 'ejs');
 app.set('views', __dirname + '/views');
