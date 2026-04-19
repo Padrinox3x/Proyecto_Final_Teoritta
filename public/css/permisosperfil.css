@@ -1,4 +1,4 @@
-/* RESET & BASE */
+/* RESET */
 *{
     margin: 0;
     padding: 0;
@@ -7,100 +7,93 @@
 }
 
 body {
-    background-color: #f8fafc;
+    background-color: #f1f5f9;
     color: #1e293b;
 }
 
-/* CONTENIDO GENERAL */
-/* Dejamos espacio dinámico debajo del breadcrumb */
-body > *:not(.breadcrumb) {
+/* CONTENEDOR REAL (esto arregla TODO el layout) */
+.container {
     width: 90%;
     max-width: 1100px;
-    margin-left: auto;
-    margin-right: auto;
+    margin: 20px auto;
 }
 
-/* Espaciado después del breadcrumb */
+/* BREADCRUMB */
 .breadcrumb {
-    margin-bottom: 20px;
+    margin-bottom: 10px;
 }
 
 /* TOOLBAR */
 .toolbar {
-    background: white;
-    padding: 20px;
+    background: #ffffff;
+    padding: 18px;
     border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
     margin-bottom: 20px;
-    display: flex;
 }
 
 /* SELECT */
 #perfilSelect {
     width: 100%;
-    max-width: 350px;
-    padding: 10px 15px;
+    max-width: 320px;
+    padding: 10px 14px;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
-    background-color: #fff;
     font-size: 14px;
-    color: #334155;
-    outline: none;
-    cursor: pointer;
     transition: 0.2s;
 }
 
 #perfilSelect:focus {
     border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+    outline: none;
 }
 
 /* TABLA */
 table {
     width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    background: white;
+    border-collapse: collapse;
+    background: #ffffff;
     border-radius: 12px;
     overflow: hidden;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    border: 1px solid #e2e8f0;
-    margin-bottom: 20px;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+}
+
+/* HEADER */
+thead {
+    background: #e2e8f0;
 }
 
 th {
-    background: #f8fafc;
-    padding: 15px;
-    font-weight: 600;
+    padding: 14px;
+    font-size: 12px;
     text-transform: uppercase;
-    font-size: 11px;
-    color: #64748b;
+    color: #475569;
     letter-spacing: 0.05em;
-    border-bottom: 1px solid #e2e8f0;
 }
 
 /* COLUMNAS */
-th:not(:first-child), 
-td:not(:first-child) {
+th:not(:first-child),
+td:not(:first-child){
     text-align: center;
-    width: 110px;
+    width: 100px;
 }
 
-th:first-child, 
-td:first-child {
+th:first-child,
+td:first-child{
     text-align: left;
-    padding-left: 25px;
-    font-weight: 700;
-    color: #1e293b;
+    padding-left: 20px;
+    font-weight: 600;
 }
 
+/* FILAS */
 td {
-    padding: 12px 15px;
-    border-bottom: 1px solid #f1f5f9;
+    padding: 12px;
+    border-top: 1px solid #f1f5f9;
 }
 
 tbody tr:hover {
-    background: #f1f5f9;
+    background: #f8fafc;
 }
 
 /* CHECKBOX */
@@ -111,32 +104,24 @@ input[type="checkbox"] {
     accent-color: #3b82f6;
 }
 
-/* CONTENEDOR BOTÓN */
+/* BOTÓN */
 #contenedor-boton {
-    display: flex;
-    justify-content: flex-end;
-    margin-bottom: 30px;
+    margin-top: 20px;
 }
 
-/* BOTÓN */
 #btnGuardar {
     background: #3b82f6;
     color: white;
     border: none;
-    padding: 12px 28px;
+    padding: 12px 24px;
     border-radius: 8px;
     font-weight: 600;
-    font-size: 14px;
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
     transition: 0.2s;
 }
 
 #btnGuardar:hover {
     background: #2563eb;
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
 }
 
 /* RESPONSIVE */
