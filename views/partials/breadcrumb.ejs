@@ -32,7 +32,7 @@
 
 <div class="user-menu-container">
     <div class="user-circle" onclick="toggleUserMenu()">
-        <img id="userAvatar" src="/img/default-avatar.png" alt="User">
+        <img id="userAvatar" src="<%= user.fotoPerfil || '/img/default-avatar.png' %>" alt="User">
     </div>
 </div>
 
@@ -45,19 +45,23 @@
     <div class="drawer-content">
         <div class="avatar-upload">
             <div class="avatar-preview">
-                <img id="previewImg" src="/img/default-avatar.png">
+                <img id="previewImg" src="<%= user.fotoPerfil || '/img/default-avatar.png' %>">
             </div>
             <label for="fileInput" class="btn-upload">Cambiar Foto</label>
-           <input type="file" id="fileInput" hidden accept="image/*" onchange="uploadToCloudinary(this)">
+            <input type="file" id="fileInput" hidden accept="image/*" onchange="uploadToCloudinary(this)">
         </div>
 
         <div class="user-info">
-            <p id="userName">Nombre de Usuario</p>
-            <small>Usuario Activo</small>
+            <h4 id="userName"><%= user.nombre %></h4>
+            <p class="user-role"><%= user.perfil %></p>
+            
+            <div class="user-details" style="text-align: left; background: #f1f5f9; padding: 10px; border-radius: 5px; font-size: 0.9em;">
+                <p><strong>📧 Correo:</strong> <%= user.correo || 'No asignado' %></p>
+                <p><strong>📱 Celular:</strong> <%= user.celular || 'No asignado' %></p>
+            </div>
         </div>
 
         <hr>
-
         <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
     </div>
 </div>

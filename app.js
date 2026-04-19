@@ -165,37 +165,29 @@ app.get('/test-db', async (req, res) => {
 // ==========================================
 app.post('/usuario/upload-avatar', upload.single('imagen'), async (req, res) => {
     try {
-        if (!req.file) {
-            return res.status(400).json({ error: '❌ No se subió ninguna imagen' });
-        }
+        if (!req.file) return res.status(400).json({ error: 'No hay imagen' });
 
-        // 1. Convertir buffer a base64 para Cloudinary
         const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-
-        // 2. Subir a Cloudinary en una carpeta organizada
         const result = await cloudinary.uploader.upload(base64Image, {
             folder: 'perfiles',
-            transformation: [{ width: 200, height: 200, crop: "fill" }] // Lo hace cuadrado automáticamente
+            transformation: [{ width: 200, height: 200, crop: "fill" }]
         });
 
         const imageUrl = result.secure_url;
 
-        // 3. Guardar en SQL Server (Opcional si quieres persistencia por usuario)
-        // Nota: Aquí asumo que tienes el ID del usuario en la sesión, si no, puedes omitirlo
-        /*
+        // ACTUALIZAR EN LA BASE DE DATOS
         const pool = await conectarDB();
         await pool.request()
-            .input('UrlAvatar', sql.NVarChar, imageUrl)
-            .input('UsuarioID', sql.Int, req.session.usuarioId) // Ejemplo
-            .query('UPDATE Usuarios SET UrlAvatar = @UrlAvatar WHERE ID = @UsuarioID');
-        */
+            .input('url', sql.NVarChar, imageUrl)
+            .input('id', sql.Int, req.session.user.id)
+            .query('UPDATE Modulo_Usuario SET fotoPerfilUrl = @url WHERE idUsuario = @id');
 
-        // 4. Responder con la URL para que el frontend la use
+        // Actualizar la sesión para que el cambio se vea al recargar
+        req.session.user.fotoPerfil = imageUrl;
+
         res.json({ url: imageUrl });
-
     } catch (error) {
-        console.error('🔥 Error al subir avatar:', error);
-        res.status(500).json({ error: 'Error al procesar la imagen' });
+        res.status(500).send('Error');
     }
 });
 
