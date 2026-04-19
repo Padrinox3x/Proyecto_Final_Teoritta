@@ -49,10 +49,12 @@
             
             <label>Nombre del Producto</label>
             <input id="nombre" placeholder="Solo letras" 
+                   maxlength="50" 
                    oninput="this.value = this.value.replace(/[0-9]/g, '')">
             
             <label>Categoría</label>
-            <input id="categoria" placeholder="Solo letras" 
+            <input id="categoria" placeholder="Solo letras"
+             maxlength="50" 
                    oninput="this.value = this.value.replace(/[0-9]/g, '')">
             
             <label>Stock disponible</label>

@@ -49,13 +49,16 @@
         
         <label>Nombre de la Sucursal</label>
         <input id="nombre" placeholder="Ej. Norte Principal" 
+         maxlength="50" 
                oninput="this.value = this.value.replace(/[0-9]/g, '')">
         
         <label>Dirección</label>
-        <input id="direccion" placeholder="Ej. Av. Siempre Viva 123">
+        <input id="direccion" placeholder="Ej. Av. Siempre Viva 123"
+         maxlength="100" >
         
         <label>Ciudad</label>
         <input id="ciudad" placeholder="Ej. CDMX" 
+         maxlength="50" 
                oninput="this.value = this.value.replace(/[0-9]/g, '')">
         
         <div class="acciones-modal">
