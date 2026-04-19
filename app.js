@@ -111,20 +111,20 @@ app.get('/permisos', isAuthenticated, (req, res) => {
     res.render('permisosPerfil');
 });
 
-app.get('/Principal_1.1', isAuthenticated, (req, res) => {
-    res.render('Principal_1.1');
+app.get('/Principal_1_1', isAuthenticated, (req, res) => {
+    res.render('Principal_1_1');
 });
 
-app.get('/Principal_1.2', isAuthenticated, (req, res) => {
-    res.render('Principal_1.2');
+app.get('/Principal_1_2', isAuthenticated, (req, res) => {
+    res.render('Principal_1_2');
 });
 
-app.get('/Principal_2.1', isAuthenticated, (req, res) => {
-    res.render('Principal_2.1');
+app.get('/Principal_2_1', isAuthenticated, (req, res) => {
+    res.render('Principal_2_1');
 });
 
-app.get('/Principal_2.2', isAuthenticated, (req, res) => {
-    res.render('Principal_2.2');
+app.get('/Principal_2_2', isAuthenticated, (req, res) => {
+    res.render('Principal_2_2');
 });
 
 /* =======================
