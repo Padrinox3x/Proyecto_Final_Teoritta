@@ -9,22 +9,23 @@
 body {
     background-color: #f8fafc;
     color: #1e293b;
-    /* Espacio para el menú superior fijo */
-    padding-top: 100px; 
 }
 
-/* FORZAMOS UN CONTENEDOR VIRTUAL */
-/* Como no tienes <div class="container">, aplicamos el ancho a los elementos principales */
-.toolbar, 
-table, 
-#contenedor-boton {
+/* CONTENIDO GENERAL */
+/* Dejamos espacio dinámico debajo del breadcrumb */
+body > *:not(.breadcrumb) {
     width: 90%;
     max-width: 1100px;
     margin-left: auto;
     margin-right: auto;
 }
 
-/* TOOLBAR - Selector de Perfil */
+/* Espaciado después del breadcrumb */
+.breadcrumb {
+    margin-bottom: 20px;
+}
+
+/* TOOLBAR */
 .toolbar {
     background: white;
     padding: 20px;
@@ -32,9 +33,9 @@ table,
     box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     margin-bottom: 20px;
     display: flex;
-    justify-content: flex-start;
 }
 
+/* SELECT */
 #perfilSelect {
     width: 100%;
     max-width: 350px;
@@ -46,7 +47,7 @@ table,
     color: #334155;
     outline: none;
     cursor: pointer;
-    transition: border 0.2s;
+    transition: 0.2s;
 }
 
 #perfilSelect:focus {
@@ -54,8 +55,9 @@ table,
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
-/* TABLA DE PERMISOS */
+/* TABLA */
 table {
+    width: 100%;
     border-collapse: separate;
     border-spacing: 0;
     background: white;
@@ -63,6 +65,7 @@ table {
     overflow: hidden;
     box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
     border: 1px solid #e2e8f0;
+    margin-bottom: 20px;
 }
 
 th {
@@ -76,14 +79,13 @@ th {
     border-bottom: 1px solid #e2e8f0;
 }
 
-/* Columnas de checks */
+/* COLUMNAS */
 th:not(:first-child), 
 td:not(:first-child) {
     text-align: center;
-    width: 120px; /* Ancho fijo para que no bailen los checks */
+    width: 110px;
 }
 
-/* Columna Módulo */
 th:first-child, 
 td:first-child {
     text-align: left;
@@ -101,7 +103,7 @@ tbody tr:hover {
     background: #f1f5f9;
 }
 
-/* CHECKBOXES */
+/* CHECKBOX */
 input[type="checkbox"] {
     width: 18px;
     height: 18px;
@@ -109,16 +111,14 @@ input[type="checkbox"] {
     accent-color: #3b82f6;
 }
 
-/* BOTÓN GUARDAR (Ajuste de posición) */
-/* Si el botón está dentro de un div, le damos una clase o usamos el selector de estilo */
-div[style*="padding:10px"], 
+/* CONTENEDOR BOTÓN */
 #contenedor-boton {
-    margin-top: 20px;
-    padding: 0 !important; 
     display: flex;
     justify-content: flex-end;
+    margin-bottom: 30px;
 }
 
+/* BOTÓN */
 #btnGuardar {
     background: #3b82f6;
     color: white;
@@ -131,10 +131,18 @@ div[style*="padding:10px"],
     display: flex;
     align-items: center;
     gap: 8px;
-    transition: all 0.2s;
+    transition: 0.2s;
 }
 
 #btnGuardar:hover {
     background: #2563eb;
     box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+/* RESPONSIVE */
+@media (max-width: 768px) {
+    table {
+        display: block;
+        overflow-x: auto;
+    }
 }
