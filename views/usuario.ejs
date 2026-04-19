@@ -48,22 +48,43 @@
         <h3>Registrar Usuario</h3>
 
         <form id="formUsuario">
-            <input type="hidden" id="id">
+    <input type="hidden" id="id">
 
-            <input id="strNombreUsuario" placeholder="Usuario" required>
-            <select id="Perfil"></select>
-            <input id="strPwd" placeholder="Contraseña" required>
-            <input id="strCorreo" placeholder="Correo">
-            <input id="strCelular" placeholder="Celular">
-            
-            <select id="estadoUsuario">
-                <option value="1">Activo</option>
-                <option value="0">Inactivo</option>
-            </select>
+    <label>Usuario</label>
+    <input id="strNombreUsuario" 
+           placeholder="Nombre de usuario" 
+           required 
+           maxlength="50"
+           oninput="this.value = this.value.replace(/[0-9]/g, '')" 
+           pattern="^[A-Za-zÁ-ú\sñÑ]+$"
+           autocomplete="off">
 
-            <button type="submit">Guardar</button>
-            <button type="button" id="btnCancelar">Cancelar</button>
-        </form>
+    <label>Perfil</label>
+    <select id="Perfil" required></select>
+
+    <label>Contraseña</label>
+    <input id="strPwd" type="password" placeholder="Contraseña" required minlength="4">
+
+    <label>Correo Electrónico</label>
+    <input id="strCorreo" type="email" placeholder="ejemplo@correo.com" required>
+
+    <label>Celular</label>
+    <input id="strCelular" 
+           placeholder="Solo números" 
+           maxlength="15"
+           oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+    
+    <label>Estado</label>
+    <select id="estadoUsuario">
+        <option value="1">Activo</option>
+        <option value="0">Inactivo</option>
+    </select>
+
+    <div class="acciones">
+        <button type="submit">Guardar</button>
+        <button type="button" id="btnCancelar">Cancelar</button>
+    </div>
+</form>
     </div>
 </div>
 
