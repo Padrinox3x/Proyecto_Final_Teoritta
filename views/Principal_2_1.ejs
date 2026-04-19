@@ -3,10 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <title>CRUD Transportes</title>
-
 <link rel="stylesheet" href="/css/Principal_1.1.css">
 <link rel="stylesheet" href="/css/breadcrums.css"> 
-
 </head>
 
 <body>
@@ -14,7 +12,7 @@
 <%- include('partials/breadcrumb') %>
 
 <div class="top-bar">
-    <input type="text" id="search" placeholder="Buscar...">
+    <input type="text" id="search" placeholder="Buscar por placa, marca o modelo...">
     
     <select id="rows">
         <option value="5">5</option>
@@ -41,23 +39,34 @@
 <div class="pagination">
     <button onclick="firstPage()">⏮</button>
     <button onclick="prevPage()">◀</button>
-    
     <span id="pageInfo"></span>
-    
     <button onclick="nextPage()">▶</button>
     <button onclick="lastPage()">⏭</button>
 </div>
 
-<!-- MODAL -->
 <div class="modal" id="modal">
     <div class="modal-content">
-        <h3>Registrar Transporte</h3>
-        <input id="placas" placeholder="Placas">
-        <input id="marca" placeholder="Marca">
-        <input id="modelo" placeholder="Modelo">
-        <input id="year" type="number" placeholder="Año">        
-        <button onclick="save()">Guardar</button>
-        <button onclick="closeModal()">Cancelar</button>
+        <h3 id="modalTitle">Registrar Transporte</h3>
+        
+        <label>Placas</label>
+        <input id="placas" placeholder="Ej. ABC-1234" 
+               oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9-]/g, '')" maxlength="10">
+        
+        <label>Marca</label>
+        <input id="marca" placeholder="Ej. Toyota" 
+               oninput="this.value = this.value.replace(/[0-9]/g, '')">
+        
+        <label>Modelo</label>
+        <input id="modelo" placeholder="Ej. Hilux">
+        
+        <label>Año</label>
+        <input id="year" type="number" placeholder="2024" min="1950" max="2027"
+               oninput="if(this.value.length > 4) this.value = this.value.slice(0,4)">
+        
+        <div class="acciones-modal">
+            <button class="btn-save" onclick="save()">Guardar</button>
+            <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+        </div>
     </div>
 </div>
 
@@ -69,20 +78,16 @@ let page = 1;
 let rows = 10;
 let editIndex = null;
 
-/* GUARDAR */
 function persist(){
     localStorage.setItem("transportes", JSON.stringify(data));
 }
 
-/* TOTAL PAGINAS */
 function totalPages(filteredLength){
     return Math.ceil(filteredLength / rows) || 1;
 }
 
-/* FILTRO */
 function getFilteredData(){
     let search = document.getElementById("search").value.toLowerCase();
-
     return data.filter(d =>
         d.placas.toLowerCase().includes(search) ||
         d.marca.toLowerCase().includes(search) ||
@@ -91,17 +96,15 @@ function getFilteredData(){
     );
 }
 
-/* RENDER */
 function render(){
     let tbody = document.getElementById("tableBody");
     tbody.innerHTML = "";
-
     let filtered = getFilteredData();
-
     let start = (page-1)*rows;
     let paginated = filtered.slice(start, start+rows);
 
-    paginated.forEach((d,i)=>{
+    paginated.forEach((d, i) => {
+        let realIndex = data.indexOf(d); 
         tbody.innerHTML += `
         <tr>
             <td>${d.placas}</td>
@@ -109,64 +112,36 @@ function render(){
             <td>${d.modelo}</td>
             <td>${d.year}</td>
             <td>
-                <button class="btn-edit" onclick="edit(${start+i})">✏️</button>
-                <button class="btn-delete" onclick="del(${start+i})">🗑</button>
+                <button class="btn-edit" onclick="edit(${realIndex})">✏️</button>
+                <button class="btn-delete" onclick="del(${realIndex})">🗑</button>
             </td>
         </tr>`;
     });
 
     let total = totalPages(filtered.length);
-
-    if(page > total) page = total;
-
-    document.getElementById("pageInfo").innerText =
-        "Página " + page + " de " + total;
+    if(page > total && total > 0) page = total;
+    document.getElementById("pageInfo").innerText = `Página ${page} de ${total}`;
 }
 
-/* PAGINACIÓN */
-function nextPage(){
-    let filtered = getFilteredData();
-    if(page < totalPages(filtered.length)){
-        page++;
-        render();
-    }
-}
+/* NAVEGACIÓN */
+function nextPage(){ if(page < totalPages(getFilteredData().length)){ page++; render(); } }
+function prevPage(){ if(page > 1){ page--; render(); } }
+function firstPage(){ page = 1; render(); }
+function lastPage(){ page = totalPages(getFilteredData().length); render(); }
 
-function prevPage(){
-    if(page > 1){
-        page--;
-        render();
-    }
-}
-
-function firstPage(){
-    page = 1;
-    render();
-}
-
-function lastPage(){
-    let filtered = getFilteredData();
-    page = totalPages(filtered.length);
-    render();
-}
-
-/* FILAS */
-document.getElementById("rows").addEventListener("change", e=>{
+document.getElementById("rows").addEventListener("change", e => {
     rows = parseInt(e.target.value);
     page = 1;
     render();
 });
 
-/* BUSCAR */
-document.getElementById("search").addEventListener("input", ()=>{
+document.getElementById("search").addEventListener("input", () => {
     page = 1;
     render();
 });
 
-/* MODAL */
-function openModal(){
-    document.getElementById("modal").style.display="flex";
-}
+/* MODAL LOGIC */
+function openModal(){ document.getElementById("modal").style.display="flex"; }
 
 function closeModal(){
     document.getElementById("modal").style.display="none";
@@ -178,16 +153,42 @@ function clear(){
     document.getElementById("marca").value="";
     document.getElementById("modelo").value="";
     document.getElementById("year").value="";
+    document.getElementById("modalTitle").innerText = "Registrar Transporte";
     editIndex = null;
 }
 
-/* GUARDAR */
+/* 🛡️ GUARDAR CON VALIDACIÓN */
 function save(){
+    const placas = document.getElementById("placas").value.trim();
+    const marca = document.getElementById("marca").value.trim();
+    const modelo = document.getElementById("modelo").value.trim();
+    const year = document.getElementById("year").value;
+
+    const currentYear = new Date().getFullYear();
+
+    // 1. Campos obligatorios
+    if(!placas || !marca || !modelo || !year){
+        alert("❌ Todos los campos son obligatorios.");
+        return;
+    }
+
+    // 2. Validación de Placas (mínimo 6 caracteres alfanuméricos)
+    if(placas.length < 5){
+        alert("❌ Ingrese una placa válida.");
+        return;
+    }
+
+    // 3. Validación de Año Lógica
+    if(parseInt(year) < 1950 || parseInt(year) > currentYear + 1){
+        alert(`❌ Ingrese un año válido (entre 1950 y ${currentYear + 1}).`);
+        return;
+    }
+
     let obj = {
-        placas: document.getElementById("placas").value,
-        marca: document.getElementById("marca").value,
-        modelo: document.getElementById("modelo").value,
-        year: document.getElementById("year").value
+        placas: placas,
+        marca: marca,
+        modelo: modelo,
+        year: parseInt(year)
     };
 
     if(editIndex !== null){
@@ -201,29 +202,26 @@ function save(){
     render();
 }
 
-/* EDITAR */
 function edit(i){
     let d = data[i];
-
     document.getElementById("placas").value = d.placas;
     document.getElementById("marca").value = d.marca;
     document.getElementById("modelo").value = d.modelo;
     document.getElementById("year").value = d.year;
-
+    document.getElementById("modalTitle").innerText = "Editar Transporte";
     editIndex = i;
     openModal();
 }
 
-/* ELIMINAR */
 function del(i){
-    if(confirm("¿Eliminar transporte?")){
+    if(confirm("¿Seguro que deseas eliminar este transporte?")){
         data.splice(i,1);
         persist();
         render();
     }
 }
 
-render();
+document.addEventListener("DOMContentLoaded", render);
 </script>
 
 </body>

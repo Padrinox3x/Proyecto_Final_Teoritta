@@ -8,11 +8,10 @@
 </head>
 
 <body>
-
     <%- include('partials/breadcrumb') %>
  
     <div class="top-bar">
-        <input type="text" id="search" placeholder="Buscar...">
+        <input type="text" id="search" placeholder="Buscar producto o categoría...">
         
         <select id="rows">
             <option value="5">5</option>
@@ -39,30 +38,40 @@
     <div class="pagination">
         <button onclick="firstPage()">⏮</button>
         <button onclick="prevPage()">◀</button>
-        
         <span id="pageInfo"></span>
-        
         <button onclick="nextPage()">▶</button>
         <button onclick="lastPage()">⏭</button>
     </div>
 
-    <div class="modal" id="modal" style="display: none;">
+    <div class="modal" id="modal">
         <div class="modal-content">
-            <h3>Registrar Producto</h3>
-            <input id="nombre" placeholder="Nombre Producto">
-            <input id="categoria" placeholder="Categoría">
-            <input id="stock" type="number" placeholder="Stock">
+            <h3 id="modalTitle">Registrar Producto</h3>
+            
+            <label>Nombre del Producto</label>
+            <input id="nombre" placeholder="Solo letras" 
+                   oninput="this.value = this.value.replace(/[0-9]/g, '')">
+            
+            <label>Categoría</label>
+            <input id="categoria" placeholder="Solo letras" 
+                   oninput="this.value = this.value.replace(/[0-9]/g, '')">
+            
+            <label>Stock disponible</label>
+            <input id="stock" type="number" placeholder="0" min="0"
+                   oninput="if(this.value < 0) this.value = 0">
+            
+            <label>Fecha de Vencimiento</label>
             <input id="fecha" type="date">
             
-            <button onclick="save()">Guardar</button>
-            <button onclick="closeModal()">Cancelar</button>
+            <div class="acciones-modal">
+                <button class="btn-guardar" onclick="save()">Guardar</button>
+                <button class="btn-cancelar" onclick="closeModal()">Cancelar</button>
+            </div>
         </div>
     </div>
 
     <script src="/js/breadcrums.js"></script> 
 
     <script>
-        // Usamos variables locales del navegador
         let data = JSON.parse(localStorage.getItem("productos")) || [];
         let page = 1;
         let rows = 10;
@@ -86,7 +95,6 @@
             );
         }
 
-        /* RENDER MODIFICADO PARA EVITAR CONFLICTO CON EJS */
         function render(){
             let tbody = document.getElementById("tableBody");
             tbody.innerHTML = "";
@@ -96,8 +104,7 @@
             let paginated = filtered.slice(start, start+rows);
 
             paginated.forEach((d, i) => {
-                let realIndex = start + i;
-                // Usamos concatenación tradicional para evitar que EJS intente leer los backticks
+                let realIndex = data.indexOf(d); // Indice real en el array original
                 let row = "<tr>" +
                     "<td>" + d.nombre + "</td>" +
                     "<td>" + d.categoria + "</td>" +
@@ -112,26 +119,15 @@
             });
 
             let total = totalPages(filtered.length);
-            if(page > total) page = total;
+            if(page > total && total > 0) page = total;
             document.getElementById("pageInfo").innerText = "Página " + page + " de " + total;
         }
 
-        function nextPage(){
-            let filtered = getFilteredData();
-            if(page < totalPages(filtered.length)){ page++; render(); }
-        }
-
-        function prevPage(){
-            if(page > 1){ page--; render(); }
-        }
-
+        // PAGINACIÓN
+        function nextPage(){ if(page < totalPages(getFilteredData().length)){ page++; render(); } }
+        function prevPage(){ if(page > 1){ page--; render(); } }
         function firstPage(){ page = 1; render(); }
-
-        function lastPage(){
-            let filtered = getFilteredData();
-            page = totalPages(filtered.length);
-            render();
-        }
+        function lastPage(){ page = totalPages(getFilteredData().length); render(); }
 
         document.getElementById("rows").addEventListener("change", e => {
             rows = parseInt(e.target.value);
@@ -144,27 +140,50 @@
             render();
         });
 
-        function openModal(){ document.getElementById("modal").style.display="flex"; }
+        // MODAL LOGIC
+        function openModal(){ 
+            document.getElementById("modal").style.display = "flex"; 
+        }
 
         function closeModal(){
-            document.getElementById("modal").style.display="none";
+            document.getElementById("modal").style.display = "none";
             clear();
         }
 
         function clear(){
-            document.getElementById("nombre").value="";
-            document.getElementById("categoria").value="";
-            document.getElementById("stock").value="";
-            document.getElementById("fecha").value="";
+            document.getElementById("nombre").value = "";
+            document.getElementById("categoria").value = "";
+            document.getElementById("stock").value = "";
+            document.getElementById("fecha").value = "";
+            document.getElementById("modalTitle").innerText = "Registrar Producto";
             editIndex = null;
         }
 
+        // 🛡️ GUARDAR CON VALIDACIONES
         function save(){
+            const nombre = document.getElementById("nombre").value.trim();
+            const categoria = document.getElementById("categoria").value.trim();
+            const stock = document.getElementById("stock").value;
+            const fecha = document.getElementById("fecha").value;
+
+            // Validación: Campos vacíos
+            if(!nombre || !categoria || !stock || !fecha){
+                alert("❌ Todos los campos son obligatorios.");
+                return;
+            }
+
+            // Validación: Solo letras (doble verificación)
+            const regexLetras = /^[A-Za-zÁ-ú\sñÑ]+$/;
+            if(!regexLetras.test(nombre) || !regexLetras.test(categoria)){
+                alert("❌ Nombre y Categoría solo deben contener letras.");
+                return;
+            }
+
             let obj = {
-                nombre: document.getElementById("nombre").value,
-                categoria: document.getElementById("categoria").value,
-                stock: document.getElementById("stock").value,
-                fecha: document.getElementById("fecha").value
+                nombre: nombre,
+                categoria: categoria,
+                stock: parseInt(stock),
+                fecha: fecha
             };
 
             if(editIndex !== null){
@@ -184,21 +203,20 @@
             document.getElementById("categoria").value = d.categoria;
             document.getElementById("stock").value = d.stock;
             document.getElementById("fecha").value = d.fecha;
+            document.getElementById("modalTitle").innerText = "Editar Producto";
             editIndex = i;
             openModal();
         }
 
         function del(i){
-            if(confirm("¿Eliminar producto?")){
+            if(confirm("¿Seguro que deseas eliminar este producto?")){
                 data.splice(i, 1);
                 persist();
                 render();
             }
         }
 
-        // Ejecutar al cargar
         document.addEventListener("DOMContentLoaded", render);
     </script>
-
 </body>
 </html>
