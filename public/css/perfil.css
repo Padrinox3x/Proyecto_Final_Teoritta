@@ -1,216 +1,67 @@
-/* RESET & BASE */
-*{
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-    font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
-}
-
-body {
-    background-color: #f8fafc;
-    color: #1e293b;
-}
-
-/* CONTENEDOR */
-.container {
-    padding: 20px;
-    max-width: 1200px;
-    margin: 80px auto 0 auto; /* Espacio para el breadcrumb */
-}
-
-/* TOOLBAR */
-.toolbar {
+/* 🔥 TOP BAR */
+.top-bar {
     display: flex;
     gap: 12px;
-    margin-bottom: 25px;
-    background: white;
-    padding: 15px;
-    border-radius: 12px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
     align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+
+    background: #ffffff;
+    padding: 16px;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+    margin-bottom: 20px;
 }
 
-.toolbar input {
-    flex-grow: 1;
+/* BUSCADOR */
+#search {
+    flex: 1;
+    min-width: 200px;
     max-width: 300px;
     padding: 10px 14px;
     border-radius: 8px;
     border: 1px solid #e2e8f0;
-    outline: none;
-}
-
-.toolbar select {
-    padding: 10px;
-    border-radius: 8px;
-    border: 1px solid #e2e8f0;
-    background: white;
-    outline: none;
-}
-
-#btnNuevo {
-    background: #10b981;
-    color: white;
-    border: none;
-    padding: 10px 18px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-}
-
-/* TABLA */
-table {
-    width: 100%;
-    border-collapse: separate;
-    border-spacing: 0;
-    background: white;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-th {
-    background: #f1f5f9;
-    padding: 15px;
-    font-weight: 600;
-    text-transform: uppercase;
-    font-size: 12px;
-    color: #64748b;
-    text-align: left;
-    border-bottom: 2px solid #e2e8f0;
-}
-
-td {
-    padding: 14px 15px;
-    border-bottom: 1px solid #f1f5f9;
     font-size: 14px;
 }
 
-/* ESTILO PARA LOS BOTONES DENTRO DE LA TABLA (EDITAR/ELIMINAR) */
-.btn-edit, .editar {
-    background: #eff6ff;
-    color: #3b82f6;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-weight: 600;
-    cursor: pointer;
-    margin-right: 5px;
+#search:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+    outline: none;
 }
 
-.btn-delete, .eliminar {
-    background: #fef2f2;
-    color: #ef4444;
-    border: none;
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-weight: 600;
-    cursor: pointer;
+/* SELECT FILAS */
+#rows {
+    width: 80px;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid #e2e8f0;
 }
 
 /* PAGINACIÓN */
-.paginacion {
+.pagination {
     margin-top: 25px;
     display: flex;
-    gap: 8px;
+    gap: 10px;
     justify-content: center;
     align-items: center;
 }
 
-.paginacion button {
-    background: white;
-    color: #64748b;
+.pagination button {
+    background: #ffffff;
     border: 1px solid #e2e8f0;
     padding: 8px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-}
-
-/* MODAL */
-.modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(15, 23, 42, 0.7);
-    backdrop-filter: blur(4px);
-    display: none; /* Controlado por JS */
-    justify-content: center;
-    align-items: center;
-    z-index: 1000;
-}
-
-.modal-content {
-    background: white;
-    padding: 30px;
-    border-radius: 16px;
-    width: 100%;
-    max-width: 400px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-}
-
-.modal-content h2 {
-    margin-bottom: 20px;
-    font-size: 1.25rem;
-    color: #0f172a;
-}
-
-.modal-content label {
-    display: block;
-    margin-bottom: 5px;
-    font-size: 14px;
-    font-weight: 500;
-    color: #475569;
-}
-
-.modal-content input[type="text"], 
-.modal-content input:not([type="checkbox"]) {
-    width: 100%;
-    padding: 10px;
-    margin-bottom: 15px;
-    border: 1px solid #e2e8f0;
     border-radius: 8px;
-    outline: none;
-}
-
-/* ESTILO ESPECÍFICO PARA EL CHECKBOX */
-.check {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 15px 0 25px 0;
     cursor: pointer;
-    font-size: 14px;
-    color: #1e293b;
+    transition: 0.2s;
 }
 
-.check input[type="checkbox"] {
-    width: 18px;
-    height: 18px;
-    cursor: pointer;
-}
-
-/* ACCIONES DEL MODAL */
-.acciones {
-    display: flex;
-    gap: 10px;
-}
-
-.acciones button {
-    flex: 1;
-    padding: 12px;
-    border-radius: 8px;
-    font-weight: 600;
-    cursor: pointer;
-    border: none;
-}
-
-.acciones button[type="submit"] {
+.pagination button:hover {
     background: #3b82f6;
     color: white;
 }
 
-#btnCancelar {
-    background: #f1f5f9;
-    color: #64748b;
+#pageInfo {
+    font-weight: 600;
+    color: #475569;
 }
