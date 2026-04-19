@@ -29,3 +29,35 @@
 
   </ul>
 </nav>
+
+<div class="user-menu-container">
+    <div class="user-circle" onclick="toggleUserMenu()">
+        <img id="userAvatar" src="/img/default-avatar.png" alt="User">
+    </div>
+</div>
+
+<div id="userDrawer" class="user-drawer">
+    <div class="drawer-header">
+        <h3>Mi Perfil</h3>
+        <button class="close-drawer" onclick="toggleUserMenu()">×</button>
+    </div>
+    
+    <div class="drawer-content">
+        <div class="avatar-upload">
+            <div class="avatar-preview">
+                <img id="previewImg" src="/img/default-avatar.png">
+            </div>
+            <label for="fileInput" class="btn-upload">Cambiar Foto</label>
+           <input type="file" id="fileInput" hidden accept="image/*" onchange="uploadToCloudinary(this)">
+        </div>
+
+        <div class="user-info">
+            <p id="userName">Nombre de Usuario</p>
+            <small>Usuario Activo</small>
+        </div>
+
+        <hr>
+
+        <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
+    </div>
+</div>

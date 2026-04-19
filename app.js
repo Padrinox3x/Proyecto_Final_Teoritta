@@ -1,5 +1,7 @@
 const express = require('express');
 const session = require('express-session');
+const cloudinary = require('./config/cloudinary');
+const multer = require('multer');
 require('dotenv').config();
 
 const { sql, conectarDB } = require('./db');
@@ -17,6 +19,15 @@ const authRoutes = require('./routes/auth.routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+const storage = multer.memoryStorage();
+
+const upload = multer({ 
+    storage: storage,
+    limits: {
+        fileSize: 5 * 1024 * 1024 // Limite de 5MB por imagen
+    }
+});
 
 /* =======================
    MIDDLEWARES
@@ -146,6 +157,45 @@ app.get('/test-db', async (req, res) => {
         res.json(result.recordset);
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+});
+
+// ==========================================
+// Subir Avatar de Usuario a Cloudinary y BD
+// ==========================================
+app.post('/usuario/upload-avatar', upload.single('imagen'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: '❌ No se subió ninguna imagen' });
+        }
+
+        // 1. Convertir buffer a base64 para Cloudinary
+        const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+
+        // 2. Subir a Cloudinary en una carpeta organizada
+        const result = await cloudinary.uploader.upload(base64Image, {
+            folder: 'perfiles',
+            transformation: [{ width: 200, height: 200, crop: "fill" }] // Lo hace cuadrado automáticamente
+        });
+
+        const imageUrl = result.secure_url;
+
+        // 3. Guardar en SQL Server (Opcional si quieres persistencia por usuario)
+        // Nota: Aquí asumo que tienes el ID del usuario en la sesión, si no, puedes omitirlo
+        /*
+        const pool = await conectarDB();
+        await pool.request()
+            .input('UrlAvatar', sql.NVarChar, imageUrl)
+            .input('UsuarioID', sql.Int, req.session.usuarioId) // Ejemplo
+            .query('UPDATE Usuarios SET UrlAvatar = @UrlAvatar WHERE ID = @UsuarioID');
+        */
+
+        // 4. Responder con la URL para que el frontend la use
+        res.json({ url: imageUrl });
+
+    } catch (error) {
+        console.error('🔥 Error al subir avatar:', error);
+        res.status(500).json({ error: 'Error al procesar la imagen' });
     }
 });
 
