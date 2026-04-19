@@ -260,3 +260,12 @@ button[type="submit"] {
         overflow-x: auto;
     }
 }
+
+#strNombrePerfil:not(:placeholder-shown):invalid {
+    border-color: var(--danger) !important;
+    background-color: #fff5f5;
+}
+
+#strNombrePerfil {
+    transition: border-color 0.3s ease;
+}
