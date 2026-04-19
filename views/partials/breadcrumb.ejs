@@ -30,38 +30,3 @@
   </ul>
 </nav>
 
-<div class="user-menu-container">
-    <div class="user-circle" onclick="toggleUserMenu()">
-        <img id="userAvatar" src="<%= user.fotoPerfil || '/img/default-avatar.png' %>" alt="User">
-    </div>
-</div>
-
-<div id="userDrawer" class="user-drawer">
-    <div class="drawer-header">
-        <h3>Mi Perfil</h3>
-        <button class="close-drawer" onclick="toggleUserMenu()">×</button>
-    </div>
-    
-    <div class="drawer-content">
-        <div class="avatar-upload">
-            <div class="avatar-preview">
-                <img id="previewImg" src="<%= user.fotoPerfil || '/img/default-avatar.png' %>">
-            </div>
-            <label for="fileInput" class="btn-upload">Cambiar Foto</label>
-            <input type="file" id="fileInput" hidden accept="image/*" onchange="uploadToCloudinary(this)">
-        </div>
-
-        <div class="user-info">
-            <h4 id="userName"><%= user.nombre %></h4>
-            <p class="user-role"><%= user.perfil %></p>
-            
-            <div class="user-details" style="text-align: left; background: #f1f5f9; padding: 10px; border-radius: 5px; font-size: 0.9em;">
-                <p><strong>📧 Correo:</strong> <%= user.correo || 'No asignado' %></p>
-                <p><strong>📱 Celular:</strong> <%= user.celular || 'No asignado' %></p>
-            </div>
-        </div>
-
-        <hr>
-        <button class="btn-logout" onclick="logout()">Cerrar Sesión</button>
-    </div>
-</div>

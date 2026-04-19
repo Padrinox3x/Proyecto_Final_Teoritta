@@ -1,7 +1,5 @@
 const express = require('express');
 const session = require('express-session');
-const cloudinary = require('./config/cloudinary');
-const multer = require('multer');
 require('dotenv').config();
 
 const { sql, conectarDB } = require('./db');
@@ -19,15 +17,6 @@ const authRoutes = require('./routes/auth.routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-const storage = multer.memoryStorage();
-
-const upload = multer({ 
-    storage: storage,
-    limits: {
-        fileSize: 5 * 1024 * 1024 // Limite de 5MB por imagen
-    }
-});
 
 /* =======================
    MIDDLEWARES
@@ -50,12 +39,6 @@ app.use(session({
         sameSite: 'none'  
     }
 }));
-
-app.use((req, res, next) => {
-    // res.locals hace que 'user' esté disponible en todos los .ejs automáticamente
-    res.locals.user = req.session.user || null;
-    next();
-});
 
 // 📄 VISTAS
 app.set('view engine', 'ejs');
@@ -163,37 +146,6 @@ app.get('/test-db', async (req, res) => {
         res.json(result.recordset);
     } catch (error) {
         res.status(500).json({ error: error.message });
-    }
-});
-
-// ==========================================
-// Subir Avatar de Usuario a Cloudinary y BD
-// ==========================================
-app.post('/usuario/upload-avatar', upload.single('imagen'), async (req, res) => {
-    try {
-        if (!req.file) return res.status(400).json({ error: 'No hay imagen' });
-
-        const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
-        const result = await cloudinary.uploader.upload(base64Image, {
-            folder: 'perfiles',
-            transformation: [{ width: 200, height: 200, crop: "fill" }]
-        });
-
-        const imageUrl = result.secure_url;
-
-        // ACTUALIZAR EN LA BASE DE DATOS
-        const pool = await conectarDB();
-        await pool.request()
-            .input('url', sql.NVarChar, imageUrl)
-            .input('id', sql.Int, req.session.user.id)
-            .query('UPDATE Modulo_Usuario SET fotoPerfilUrl = @url WHERE idUsuario = @id');
-
-        // Actualizar la sesión para que el cambio se vea al recargar
-        req.session.user.fotoPerfil = imageUrl;
-
-        res.json({ url: imageUrl });
-    } catch (error) {
-        res.status(500).send('Error');
     }
 });
 
