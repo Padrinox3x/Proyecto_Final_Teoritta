@@ -179,6 +179,10 @@ tbody tr:hover {
     z-index: 1000;
 }
 
+.modal.activo {
+    display: flex !important;
+}
+
 /* Si usas una clase para mostrarlo */
 .modal.show, .modal[style*="display: flex"] {
     display: flex !important;

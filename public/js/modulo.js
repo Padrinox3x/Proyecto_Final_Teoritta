@@ -38,7 +38,7 @@ document.addEventListener('DOMContentLoaded', () => {
     btnCancelar.onclick = cerrarModal;
 
     async function cargarModulo() {
-        const buscar = inputBuscar.value;
+        const buscar = inputBuscar.value.trim();
 
         const res = await fetch(`/api/modulo?buscar=${buscar}&limit=${limit}&page=${page}`);
         const result = await res.json();
@@ -51,8 +51,8 @@ document.addEventListener('DOMContentLoaded', () => {
             tr.innerHTML = `
                 <td>${m.strNombreModulo}</td>
                 <td>
-                    <button class="editar">✏️</button>
-                    <button class="eliminar">🗑</button>
+                    <button class="editar btn-edit">✏️</button>
+                    <button class="eliminar btn-delete">🗑</button>
                 </td>
             `;
 
@@ -73,6 +73,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         totalPaginas = Math.ceil(result.total / limit) || 1;
         spanPagina.textContent = `Página ${page} de ${totalPaginas}`;
+
+        // Desactivar botones si no hay más páginas
+        btnFirst.disabled = page <= 1;
+        btnPrev.disabled = page <= 1;
+        btnNext.disabled = page >= totalPaginas;
+        btnLast.disabled = page >= totalPaginas;
     }
 
     inputBuscar.addEventListener('input', () => {
@@ -94,13 +100,30 @@ document.addEventListener('DOMContentLoaded', () => {
     btnNext.onclick = () => { if (page < totalPaginas) page++; cargarModulo(); };
     btnLast.onclick = () => { page = totalPaginas; cargarModulo(); };
 
+    /* 🛡 VALIDACIÓN Y ENVÍO */
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
 
         const id = document.getElementById('id').value;
+        const nombreInput = document.getElementById('strNombreModulo');
+        const nombreValor = nombreInput.value.trim();
+
+        // VALIDACIÓN: Solo letras y espacios, máximo 50
+        const regexLetras = /^[A-Za-zÁ-ú\sñÑ]+$/;
+        
+        if (nombreValor.length > 50) {
+            alert('❌ El nombre no puede tener más de 50 caracteres.');
+            return;
+        }
+
+        if (!regexLetras.test(nombreValor)) {
+            alert('❌ El nombre solo debe contener letras.');
+            nombreInput.focus();
+            return;
+        }
 
         const data = {
-            strNombreModulo: document.getElementById('strNombreModulo').value
+            strNombreModulo: nombreValor
         };
 
         const url = id ? `/api/modulo/${id}` : '/api/modulo';
@@ -117,6 +140,8 @@ document.addEventListener('DOMContentLoaded', () => {
         if (result.ok) {
             cerrarModal();
             cargarModulo();
+        } else {
+            alert('❌ Error al guardar el módulo');
         }
     });
 
