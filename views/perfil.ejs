@@ -3,10 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <title>Perfiles</title>
-
-<link rel="stylesheet" href="/css/perfil.css">
+<link rel="stylesheet" href="/css/personal.css">
 <link rel="stylesheet" href="/css/breadcrums.css"> 
-
 </head>
 <body>
 
@@ -14,11 +12,11 @@
 
 <div class="container">
 
-    <!-- 🔥 TOP BAR -->
-    <div class="top-bar">
-        <input type="text" id="search" placeholder="Buscar perfil...">
+    <!-- TOOLBAR -->
+    <div class="toolbar">
+        <input type="text" id="buscar" placeholder="Buscar perfil...">
 
-        <select id="rows">
+        <select id="limit">
             <option value="5">5</option>
             <option value="10" selected>10</option>
             <option value="20">20</option>
@@ -39,18 +37,18 @@
         <tbody id="tablaPerfil"></tbody>
     </table>
 
-    <!-- 🔥 PAGINACIÓN -->
-    <div class="pagination">
+    <!-- PAGINACIÓN -->
+    <div class="paginacion">
         <button id="first">⏮</button>
         <button id="prev">◀</button>
-        <span id="pageInfo"></span>
+        <span id="pagina"></span>
         <button id="next">▶</button>
         <button id="last">⏭</button>
     </div>
 
 </div>
 
-<!-- MODAL (igual) -->
+<!-- MODAL -->
 <div id="modal" class="modal">
     <div class="modal-content">
 
@@ -77,9 +75,8 @@
     </div>
 </div>
 
-<script src="/js/perfil.js"></script>
 <script src="/js/breadcrums.js"></script> 
-
+<script src="/js/perfil.js"></script>
 <script>
 let page = 1;
 let rows = 10;
