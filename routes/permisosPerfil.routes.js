@@ -56,22 +56,22 @@ router.post('/', async (req, res) => {
                 .input('bitEliminar', sql.Bit, p.bitEliminar)
                 .input('bitDetalle', sql.Bit, p.bitDetalle)
                 .query(`
-                    MERGE permisosPerfil AS target
-                    USING (SELECT @Modulo AS Modulo, @Perfil AS Perfil) AS source
-                    ON target.Modulo = source.Modulo AND target.Perfil = source.Perfil
+    MERGE Modulo_permisosPerfil AS target
+    USING (SELECT @Modulo AS Modulo, @Perfil AS Perfil) AS source
+    ON target.Modulo = source.Modulo AND target.Perfil = source.Perfil
 
-                    WHEN MATCHED THEN
-                        UPDATE SET
-                            bitAgregar = @bitAgregar,
-                            bitEditar = @bitEditar,
-                            bitConsulta = @bitConsulta,
-                            bitEliminar = @bitEliminar,
-                            bitDetalle = @bitDetalle
+    WHEN MATCHED THEN
+        UPDATE SET
+            bitAgregar = @bitAgregar,
+            bitEditar = @bitEditar,
+            bitConsulta = @bitConsulta,
+            bitEliminar = @bitEliminar,
+            bitDetalle = @bitDetalle
 
-                    WHEN NOT MATCHED THEN
-                        INSERT (Modulo, Perfil, bitAgregar, bitEditar, bitConsulta, bitEliminar, bitDetalle)
-                        VALUES (@Modulo, @Perfil, @bitAgregar, @bitEditar, @bitConsulta, @bitEliminar, @bitDetalle);
-                `);
+    WHEN NOT MATCHED THEN
+        INSERT (Modulo, Perfil, bitAgregar, bitEditar, bitConsulta, bitEliminar, bitDetalle)
+        VALUES (@Modulo, @Perfil, @bitAgregar, @bitEditar, @bitConsulta, @bitEliminar, @bitDetalle);
+`);
         }
 
         res.json({ ok: true });
