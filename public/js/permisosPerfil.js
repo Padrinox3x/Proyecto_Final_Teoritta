@@ -67,7 +67,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const res = await fetch('/api/permisosPerfil', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ permisos })
+            body: JSON.stringify({
+            Perfil: parseInt(idPerfil), // 🔥 ESTO FALTABA
+            permisos
+        })
         });
 
         const result = await res.json();
