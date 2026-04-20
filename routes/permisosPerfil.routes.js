@@ -41,44 +41,63 @@ router.get('/:idPerfil', async (req, res) => {
 ======================= */
 router.post('/', async (req, res) => {
     try {
-        const { permisos } = req.body;
+        const { permisos, Perfil } = req.body;
+
+        // 🔴 VALIDACIÓN
+        if (!Perfil) {
+            return res.status(400).json({ error: 'Perfil es requerido' });
+        }
 
         const pool = await conectarDB();
 
+        // 🔴 VALIDAR QUE EL PERFIL EXISTA
+        const existePerfil = await pool.request()
+            .input('Perfil', sql.Int, Perfil)
+            .query(`
+                SELECT idPerfil 
+                FROM Modulo_Perfil 
+                WHERE idPerfil = @Perfil
+            `);
+
+        if (existePerfil.recordset.length === 0) {
+            return res.status(400).json({ error: 'El perfil no existe' });
+        }
+
+        // 🔁 GUARDAR PERMISOS
         for (const p of permisos) {
 
             await pool.request()
                 .input('Modulo', sql.Int, p.idModulo)
-                .input('Perfil', sql.Int, req.body.permisos[0].Perfil || 0)
+                .input('Perfil', sql.Int, Perfil)
                 .input('bitAgregar', sql.Bit, p.bitAgregar)
                 .input('bitEditar', sql.Bit, p.bitEditar)
                 .input('bitConsulta', sql.Bit, p.bitConsulta)
                 .input('bitEliminar', sql.Bit, p.bitEliminar)
                 .input('bitDetalle', sql.Bit, p.bitDetalle)
                 .query(`
-    MERGE Modulo_permisosPerfil AS target
-    USING (SELECT @Modulo AS Modulo, @Perfil AS Perfil) AS source
-    ON target.Modulo = source.Modulo AND target.Perfil = source.Perfil
+                    MERGE Modulo_permisosPerfil AS target
+                    USING (SELECT @Modulo AS Modulo, @Perfil AS Perfil) AS source
+                    ON target.Modulo = source.Modulo AND target.Perfil = source.Perfil
 
-    WHEN MATCHED THEN
-        UPDATE SET
-            bitAgregar = @bitAgregar,
-            bitEditar = @bitEditar,
-            bitConsulta = @bitConsulta,
-            bitEliminar = @bitEliminar,
-            bitDetalle = @bitDetalle
+                    WHEN MATCHED THEN
+                        UPDATE SET
+                            bitAgregar = @bitAgregar,
+                            bitEditar = @bitEditar,
+                            bitConsulta = @bitConsulta,
+                            bitEliminar = @bitEliminar,
+                            bitDetalle = @bitDetalle
 
-    WHEN NOT MATCHED THEN
-        INSERT (Modulo, Perfil, bitAgregar, bitEditar, bitConsulta, bitEliminar, bitDetalle)
-        VALUES (@Modulo, @Perfil, @bitAgregar, @bitEditar, @bitConsulta, @bitEliminar, @bitDetalle);
-`);
+                    WHEN NOT MATCHED THEN
+                        INSERT (Modulo, Perfil, bitAgregar, bitEditar, bitConsulta, bitEliminar, bitDetalle)
+                        VALUES (@Modulo, @Perfil, @bitAgregar, @bitEditar, @bitConsulta, @bitEliminar, @bitDetalle);
+                `);
         }
 
         res.json({ ok: true });
 
     } catch (error) {
         console.error(error);
-        res.status(500).json({ ok: false });
+        res.status(500).json({ ok: false, error: error.message });
     }
 });
 
