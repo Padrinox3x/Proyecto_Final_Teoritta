@@ -2,9 +2,56 @@ const express = require('express');
 const router = express.Router();
 const { sql, conectarDB } = require('../db');
 
-/* =======================
-   OBTENER PERMISOS POR PERFIL
-======================= */
+/* ============================================================
+    NUEVO: OBTENER PERMISOS DEL USUARIO ACTUAL PARA UN MÓDULO
+    Se usa en los CRUDs (Usuario, Principal 1, etc.)
+============================================================ */
+router.get('/mis-permisos', async (req, res) => {
+    try {
+        const { modulo } = req.query;
+
+        // 1. Verificación de sesión
+        if (!req.session || !req.session.user) {
+            return res.status(401).json({ ok: false, msg: 'Sesión no iniciada' });
+        }
+
+        const idPerfil = req.session.user.Perfil; // Extraído de auth.routes.js
+
+        const pool = await conectarDB();
+        const result = await pool.request()
+            .input('idPerfil', sql.Int, idPerfil)
+            .input('modulo', sql.NVarChar, modulo)
+            .query(`
+                SELECT 
+                    p.bitAgregar, 
+                    p.bitEditar, 
+                    p.bitConsulta, 
+                    p.bitEliminar, 
+                    p.bitDetalle
+                FROM Modulo_permisosPerfil p
+                INNER JOIN Modulo m ON p.Modulo = m.idModulo
+                WHERE p.Perfil = @idPerfil 
+                AND m.strNombreModulo = @modulo
+            `);
+
+        // Si no hay permisos configurados, devolvemos todo en false (0)
+        if (result.recordset.length === 0) {
+            return res.json({
+                bitAgregar: 0, bitEditar: 0, bitConsulta: 0, bitEliminar: 0, bitDetalle: 0
+            });
+        }
+
+        res.json(result.recordset[0]);
+
+    } catch (error) {
+        console.error('💥 ERROR AL CONSULTAR MIS PERMISOS:', error);
+        res.status(500).json({ ok: false, error: error.message });
+    }
+});
+
+/* ============================================================
+    OBTENER MATRIZ DE PERMISOS (Para la pantalla de Seguridad)
+============================================================ */
 router.get('/:idPerfil', async (req, res) => {
     try {
         const pool = await conectarDB();
@@ -36,36 +83,30 @@ router.get('/:idPerfil', async (req, res) => {
     }
 });
 
-/* =======================
-   GUARDAR PERMISOS
-======================= */
+/* ============================================================
+    GUARDAR PERMISOS (MERGE)
+============================================================ */
 router.post('/', async (req, res) => {
     try {
         const { permisos, Perfil } = req.body;
 
-        // 🔴 VALIDACIÓN
         if (!Perfil) {
             return res.status(400).json({ error: 'Perfil es requerido' });
         }
 
         const pool = await conectarDB();
 
-        // 🔴 VALIDAR QUE EL PERFIL EXISTA
+        // Validar que el perfil exista
         const existePerfil = await pool.request()
             .input('Perfil', sql.Int, Perfil)
-            .query(`
-                SELECT idPerfil 
-                FROM Modulo_Perfil 
-                WHERE idPerfil = @Perfil
-            `);
+            .query(`SELECT idPerfil FROM Modulo_Perfil WHERE idPerfil = @Perfil`);
 
         if (existePerfil.recordset.length === 0) {
             return res.status(400).json({ error: 'El perfil no existe' });
         }
 
-        // 🔁 GUARDAR PERMISOS
+        // Guardar permisos con MERGE
         for (const p of permisos) {
-
             await pool.request()
                 .input('Modulo', sql.Int, p.idModulo)
                 .input('Perfil', sql.Int, Perfil)
