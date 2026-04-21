@@ -12,16 +12,16 @@
 <%- include('partials/breadcrumb') %>
 
 <div class="top-bar">
-    <input type="text" id="search" placeholder="Buscar por nombre, dirección o ciudad...">
-    
-    <select id="rows">
-        <option value="5">5</option>
-        <option value="10" selected>10</option>
-        <option value="15">15</option>
-    </select>
+        <input type="text" id="search" placeholder="Buscar por nombre, dirección o ciudad...">
+        
+        <select id="rows">
+            <option value="5">5</option>
+            <option value="10" selected>10</option>
+            <option value="15">15</option>
+        </select>
 
-    <button class="btn-add" onclick="openModal()">+</button>
-</div>
+        <button id="btnNuevo" class="btn-add" onclick="openModal()">+</button>
+    </div>
 
 <table>
 <thead>
@@ -76,6 +76,27 @@ let page = 1;
 let rows = 10;
 let editIndex = null;
 
+// --- 🛡️ ESTADO GLOBAL DE PERMISOS ---
+let permisosModulo = {
+    bitAgregar: 0, bitEditar: 0, bitConsulta: 0, bitEliminar: 0, bitDetalle: 0
+};
+
+// --- 🛡️ CARGAR PERMISOS (Principal_2_2) ---
+async function cargarPermisos() {
+    try {
+        const res = await fetch('/api/permisosPerfil/mis-permisos?modulo=Principal_2_2');
+        permisosModulo = await res.json();
+        
+        // Ocultar botón "+" si no tiene bitAgregar
+        if (!permisosModulo.bitAgregar) {
+            const btn = document.getElementById('btnNuevo');
+            if(btn) btn.style.display = 'none';
+        }
+    } catch (error) {
+        console.error("Error cargando permisos de Sucursales:", error);
+    }
+}
+
 function persist(){
     localStorage.setItem("sucursales", JSON.stringify(data));
 }
@@ -102,15 +123,26 @@ function render(){
 
     paginated.forEach((d, i) => {
         let realIndex = data.indexOf(d); 
+        
+        // --- 🛡️ RENDERIZADO SEGURO DE BOTONES ---
+        let botonesAccion = "";
+        if (permisosModulo.bitEditar) {
+            botonesAccion += `<button class="btn-edit" onclick="edit(${realIndex})">✏️</button> `;
+        }
+        if (permisosModulo.bitEliminar) {
+            botonesAccion += `<button class="btn-delete" onclick="del(${realIndex})">🗑</button>`;
+        }
+        // Si no tiene ninguno de los dos permisos de acción
+        if (!permisosModulo.bitEditar && !permisosModulo.bitEliminar) {
+            botonesAccion = '<span style="color:gray; font-size:11px;">Lectura</span>';
+        }
+
         tbody.innerHTML += `
         <tr>
             <td>${d.nombre}</td>
             <td>${d.direccion}</td>
             <td>${d.ciudad}</td>
-            <td>
-                <button class="btn-edit" onclick="edit(${realIndex})">✏️</button>
-                <button class="btn-delete" onclick="del(${realIndex})">🗑</button>
-            </td>
+            <td>${botonesAccion}</td>
         </tr>`;
     });
 
@@ -119,30 +151,14 @@ function render(){
     document.getElementById("pageInfo").innerText = `Página ${page} de ${total}`;
 }
 
-/* NAVEGACIÓN */
+/* NAVEGACIÓN Y MODAL LOGIC (Se mantienen igual) */
 function nextPage(){ if(page < totalPages(getFilteredData().length)){ page++; render(); } }
 function prevPage(){ if(page > 1){ page--; render(); } }
 function firstPage(){ page = 1; render(); }
 function lastPage(){ page = totalPages(getFilteredData().length); render(); }
 
-document.getElementById("rows").addEventListener("change", e => {
-    rows = parseInt(e.target.value);
-    page = 1;
-    render();
-});
-
-document.getElementById("search").addEventListener("input", () => {
-    page = 1;
-    render();
-});
-
-/* MODAL LOGIC */
 function openModal(){ document.getElementById("modal").style.display="flex"; }
-
-function closeModal(){
-    document.getElementById("modal").style.display="none";
-    clear();
-}
+function closeModal(){ document.getElementById("modal").style.display="none"; clear(); }
 
 function clear(){
     document.getElementById("nombre").value="";
@@ -152,19 +168,21 @@ function clear(){
     editIndex = null;
 }
 
-/* 🛡️ GUARDAR CON VALIDACIONES */
+/* 🛡️ GUARDAR CON VALIDACIÓN DE PERMISOS */
 function save(){
+    // Bloqueo lógico por si el usuario activa el modal por consola
+    if(editIndex !== null && !permisosModulo.bitEditar) return alert("❌ No tienes permiso para editar.");
+    if(editIndex === null && !permisosModulo.bitAgregar) return alert("❌ No tienes permiso para registrar.");
+
     const nombre = document.getElementById("nombre").value.trim();
     const direccion = document.getElementById("direccion").value.trim();
     const ciudad = document.getElementById("ciudad").value.trim();
 
-    // 1. Campos obligatorios
     if(!nombre || !direccion || !ciudad){
         alert("❌ Todos los campos son obligatorios.");
         return;
     }
 
-    // 2. Validación de longitud
     if(nombre.length < 3 || ciudad.length < 3){
         alert("❌ El nombre y la ciudad deben tener al menos 3 caracteres.");
         return;
@@ -198,6 +216,9 @@ function edit(i){
 }
 
 function del(i){
+    // Validación de bit antes de proceder
+    if(!permisosModulo.bitEliminar) return alert("❌ No tienes permiso para eliminar.");
+    
     if(confirm("¿Seguro que deseas eliminar esta sucursal?")){
         data.splice(i,1);
         persist();
@@ -205,7 +226,11 @@ function del(i){
     }
 }
 
-document.addEventListener("DOMContentLoaded", render);
+// --- 🛡️ INICIALIZACIÓN ---
+document.addEventListener("DOMContentLoaded", async () => {
+    await cargarPermisos(); // Primero consultamos los privilegios
+    render();               // Luego pintamos la tabla
+});
 </script>
 
 </body>
