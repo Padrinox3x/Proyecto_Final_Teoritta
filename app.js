@@ -1,6 +1,8 @@
 const express = require('express');
 const session = require('express-session');
 require('dotenv').config();
+const cloudinary = require('./config/cloudinary'); 
+const multer = require('multer');
 
 const { sql, conectarDB } = require('./db');
 
@@ -17,7 +19,8 @@ const authRoutes = require('./routes/auth.routes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 /* =======================
    MIDDLEWARES
 ======================= */
@@ -146,6 +149,51 @@ app.get('/test-db', async (req, res) => {
         res.json(result.recordset);
     } catch (error) {
         res.status(500).json({ error: error.message });
+    }
+});
+
+app.post('/api/usuario/upload-avatar', isAuthenticated, upload.single('imagen'), async (req, res) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ error: '❌ No se recibió ninguna imagen' });
+        }
+
+        // Usamos el ID del usuario de la sesión (ajusta 'idUsuario' según tu objeto session)
+        const usuarioId = req.session.user.idUsuario; 
+
+        // Convertir buffer a base64
+        const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+
+        // Subir a Cloudinary usando TU módulo importado
+        const result = await cloudinary.uploader.upload(base64Image, {
+            folder: 'perfiles_usuarios',
+            public_id: `user_${usuarioId}`,
+            overwrite: true
+        });
+
+        // Actualizar en SQL Server
+        const pool = await conectarDB();
+        await pool.request()
+            .input('IdUsuario', sql.Int, usuarioId)
+            .input('FotoUrl', sql.NVarChar, result.secure_url)
+            .query(`
+                UPDATE dbo.Usuarios 
+                SET FotoUrl = @FotoUrl 
+                WHERE IdUsuario = @IdUsuario
+            `);
+
+        // Actualizamos la sesión para que el avatar cambie en toda la app sin refrescar
+        req.session.user.FotoUrl = result.secure_url;
+
+        res.json({ 
+            success: true, 
+            url: result.secure_url,
+            message: '¡Foto de perfil actualizada!' 
+        });
+
+    } catch (error) {
+        console.error('🔥 Error al actualizar avatar:', error);
+        res.status(500).json({ error: 'Error interno del servidor' });
     }
 });
 

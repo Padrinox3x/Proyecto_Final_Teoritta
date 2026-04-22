@@ -30,3 +30,42 @@
   </ul>
 </nav>
 
+<nav class="menu">
+  <ul>
+    <li class="user-profile-item">
+      <div id="user-avatar" class="avatar-circle">
+        <img src="/path-to-default-avatar.png" id="avatar-img" alt="User">
+      </div>
+    </li>
+  </ul>
+</nav>
+
+<aside id="user-sidebar" class="user-sidebar">
+  <div class="sidebar-header">
+    <h3>Perfil de Usuario</h3>
+    <button id="close-sidebar">&times;</button>
+  </div>
+  
+  <div class="sidebar-content">
+    <div class="profile-main-photo">
+        <img src="<%= user.FotoUrl || '/img/default-avatar.png' %>" id="sidebar-avatar-img" alt="Avatar">
+    </div>
+
+    <div class="profile-info">
+      <p><strong>Usuario:</strong> <span><%= user.strNombreUsuario %></span></p>
+      <p><strong>Perfil:</strong> <span><%= user.PerfilNombre || 'Usuario' %></span></p>
+      <p><strong>Correo:</strong> <span><%= user.strCorreo %></span></p>
+      <p><strong>Celular:</strong> <span><%= user.strCelular || 'No registrado' %></span></p>
+    </div>
+
+    <div class="upload-section">
+      <label for="image-input" class="upload-label">Cambiar foto</label>
+      <input type="file" id="image-input" accept="image/*" style="display: none;">
+      <button type="button" onclick="document.getElementById('image-input').click()" class="btn-select">Seleccionar Imagen</button>
+      <button id="btn-upload" class="btn-primary">Actualizar Foto</button>
+    </div>
+
+    <hr>
+    <a href="/login" class="btn-logout">Cerrar Sesión</a>
+  </div>
+</aside>
