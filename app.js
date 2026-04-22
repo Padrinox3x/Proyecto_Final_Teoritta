@@ -135,13 +135,13 @@ app.post('/api/usuario/upload-avatar', isAuthenticated, upload.single('imagen'),
         // ACTUALIZACIÓN SQL: Usando 'Modulo_Usuario' e 'idUsuario'
         const pool = await conectarDB();
         await pool.request()
-            .input('idUsuarioParam', sql.Int, usuarioId)
-            .input('FotoUrl', sql.NVarChar, result.secure_url)
-            .query(`
-                UPDATE Modulo_Usuario 
-                SET FotoUrl = @FotoUrl 
-                WHERE idUsuario = @idUsuarioParam
-            `);
+        .input('idUsuarioParam', sql.Int, usuarioId) // 'idUsuario' según tu captura
+        .input('FotoUrlParam', sql.NVarChar, result.secure_url)
+         .query(`
+        UPDATE Modulo_Usuario 
+        SET FotoUrl = @FotoUrlParam 
+        WHERE idUsuario = @idUsuarioParam
+    `); // Tabla 'Modulo_Usuario'
 
         // Actualizamos la sesión para que el cambio se vea reflejado
         req.session.user.FotoUrl = result.secure_url;
