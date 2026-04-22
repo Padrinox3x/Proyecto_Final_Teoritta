@@ -8,29 +8,39 @@ async function cargarPermisosMenu() {
         const res = await fetch('/api/permisosPerfil/mis-modulos'); 
         if (!res.ok) return;
 
-        const data = await res.json(); 
+        const data = await res.json();
 
-        const modulosPermitidos = data.map(m => m.toLowerCase().trim());
+        // 🔥 Detectar si es admin
+        const esAdmin = data.some(p => 
+            p.bitAdministrador == 1 || 
+            p.bitAdministrador === true
+        );
 
-        const links = document.querySelectorAll(".submenu li a");
+        // 🔥 Normalizar módulos (soporta string u objeto)
+        const modulosPermitidos = data.map(m => {
+            if (typeof m === "string") return m.toLowerCase().trim();
+            return (m.strNombreModulo || "").toLowerCase().trim();
+        });
 
-        links.forEach(link => {
-            const modulo = link.dataset.modulo?.toLowerCase().trim();
+        // 🔥 Seleccionamos los LI (no los <a>)
+        const items = document.querySelectorAll(".submenu li");
 
-            const tienePermiso = modulosPermitidos.includes(modulo);
+        items.forEach(li => {
+            const modulo = (li.dataset.modulo || "").toLowerCase().trim();
 
-            const li = link.parentElement;
+            if (!modulo) return;
+
+            const tienePermiso = esAdmin || modulosPermitidos.includes(modulo);
 
             li.style.display = tienePermiso ? "block" : "none";
         });
 
-        // Ocultar menú padre si no tiene hijos visibles
+        // 🔥 Ocultar menús padres sin hijos visibles
         document.querySelectorAll(".menu > ul > li").forEach(menu => {
             const submenu = menu.querySelector(".submenu");
-
             if (!submenu) return;
 
-            const visibles = Array.from(submenu.children)
+            const visibles = Array.from(submenu.querySelectorAll("li"))
                 .filter(li => li.style.display !== "none");
 
             if (visibles.length === 0) {
