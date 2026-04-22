@@ -15,7 +15,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     async function cargarPermisosDeUsuario() {
         try {
             // Suponiendo que este módulo se llama "Seguridad" en tu tabla Modulo
-            const res = await fetch('/api/permisosPerfil/mis-permisos?modulo=Seguridad');
+            const res = await fetch('/api/permisosPerfil/mis-permisos?modulo=Permisos');
             permisosModuloSeguridad = await res.json();
             
             // Si no tiene permiso de editar/agregar, bloqueamos el botón de guardar global
