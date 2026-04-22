@@ -2,35 +2,53 @@
  * Lógica para el Menú de Navegación y Sidebar de Usuario
  */
 
+// 🔥 NORMALIZADOR (CLAVE)
+function normalizar(texto) {
+    return (texto || "")
+        .toLowerCase()
+        .replace(/\s+/g, "_")
+        .trim();
+}
+
 // --- 🛡️ FUNCIÓN DE FILTRADO DE MENÚ ---
 async function cargarPermisosMenu() {
     try {
-        const res = await fetch('/api/menu/mis-menus');
+        const res = await fetch('/api/menu/mis-menus', {
+            credentials: 'include'
+        });
+
         if (!res.ok) return;
 
         const data = await res.json();
 
-        console.log("MENUS BACKEND:", data); // DEBUG
+        console.log("🔥 MENUS BACKEND:", data);
 
-        // 🔥 SOLO MENUS (NO MODULOS)
-        const menusPermitidos = data.map(m => 
-            (m.strNombreMenu || "").toLowerCase().trim()
+        // 🔥 DETECTAR ADMIN (por si lo mandas)
+        const esAdmin = data.some(m =>
+            m.bitAdministrador == 1 || m.bitAdministrador === true
         );
 
-        console.log("MENUS PERMITIDOS:", menusPermitidos); // DEBUG
+        // 🔥 NORMALIZAR MENÚS
+        const menusPermitidos = data.map(m =>
+            normalizar(m.strNombreMenu)
+        );
 
-        // 🔥 USAMOS data-menu (NO data-modulo)
+        console.log("🔥 MENUS NORMALIZADOS:", menusPermitidos);
+
+        // 🔥 FILTRAR ITEMS
         document.querySelectorAll(".submenu li").forEach(li => {
-            const menu = (li.dataset.menu || "").toLowerCase().trim();
+            const menuHTML = normalizar(li.dataset.menu);
 
-            if (!menu) return;
+            if (!menuHTML) return;
 
-            const tienePermiso = menusPermitidos.includes(menu);
+            const tienePermiso = esAdmin || menusPermitidos.includes(menuHTML);
+
+            console.log("CHECK:", menuHTML, tienePermiso);
 
             li.style.display = tienePermiso ? "block" : "none";
         });
 
-        // 🔥 OCULTAR MENUS PADRE VACÍOS
+        // 🔥 OCULTAR MENÚS PADRE VACÍOS
         document.querySelectorAll(".menu > ul > li").forEach(menu => {
             const submenu = menu.querySelector(".submenu");
             if (!submenu) return;
@@ -49,7 +67,10 @@ async function cargarPermisosMenu() {
 // --- FUNCIONES COMPLEMENTARIAS ---
 async function cargarDatosUsuario() {
     try {
-        const res = await fetch('/api/usuario/me');
+        const res = await fetch('/api/usuario/me', {
+            credentials: 'include'
+        });
+
         if (!res.ok) throw new Error("No se pudo obtener la sesión");
 
         const user = await res.json();
