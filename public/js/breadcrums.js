@@ -5,43 +5,48 @@
 // --- 🛡️ FUNCIÓN DE FILTRADO DE MENÚ ---
 async function cargarPermisosMenu() {
     try {
-        // Consultamos la lista de módulos donde el usuario tiene permiso de CONSULTA
         const res = await fetch('/api/permisosPerfil/mis-modulos'); 
         if (!res.ok) return;
 
-        const modulosPermitidos = await res.json(); 
-        // Ejemplo esperado del servidor: ["Usuario", "Modulo", "Perfil", "Principal_2_1"]
+        // Convertimos todo a minúsculas para evitar errores de "Usuario" vs "usuario"
+        const data = await res.json(); 
+        const modulosPermitidos = data.map(m => m.toLowerCase().trim());
 
         // 1. Buscamos todos los enlaces que están dentro de submenús
         const linksSubmenu = document.querySelectorAll(".submenu li a");
 
         linksSubmenu.forEach(link => {
-            // Obtenemos el nombre del módulo desde el href (ej: "/Principal_2_1" -> "Principal_2_1")
-            const nombreModulo = link.getAttribute("href").replace("/", "");
+            // Limpiamos el href: quitamos la "/" inicial, pasamos a minúsculas
+            let nombreModulo = link.getAttribute("href").replace("/", "").toLowerCase().trim();
             
-            // Verificamos si tiene permiso
-            const tienePermiso = modulosPermitidos.includes(nombreModulo);
+            // Caso especial: si el href es "/permisos" pero en BD es "Permisos_Perfil" o "Permisos"
+            // Intentamos buscar si alguna de las palabras permitidas está contenida o viceversa
+            const tienePermiso = modulosPermitidos.some(m => 
+                m === nombreModulo || 
+                m.includes(nombreModulo) || 
+                nombreModulo.includes(m)
+            );
             
+            const liPadre = link.parentElement;
             if (!tienePermiso) {
-                link.parentElement.style.display = 'none'; // Oculta el <li>
+                liPadre.style.setProperty("display", "none", "important");
             } else {
-                link.parentElement.style.display = 'block';
+                liPadre.style.display = 'block';
             }
         });
 
-        // 2. LÓGICA EXTRA: Ocultar el Padre (Seguridad, Principal 1, etc.) si no hay hijos visibles
+        // 2. Ocultar el Padre (Seguridad, Principal 1, etc.) si todos sus hijos están ocultos
         const itemsPrincipales = document.querySelectorAll(".menu > ul > li");
 
         itemsPrincipales.forEach(itemPrincipal => {
             const submenu = itemPrincipal.querySelector(".submenu");
             if (submenu) {
-                // Contamos cuántos enlaces quedaron visibles en este submenú
+                // Verificamos si queda algún <li> que NO tenga display: none
                 const hijosVisibles = Array.from(submenu.querySelectorAll("li"))
                                            .filter(li => li.style.display !== 'none');
                 
-                // Si no hay hijos, ocultamos toda la sección (ej. ocultar "Seguridad" completo)
                 if (hijosVisibles.length === 0) {
-                    itemPrincipal.style.display = 'none';
+                    itemPrincipal.style.setProperty("display", "none", "important");
                 } else {
                     itemPrincipal.style.display = 'block';
                 }
@@ -53,7 +58,7 @@ async function cargarPermisosMenu() {
     }
 }
 
-// --- RESTO DE TUS FUNCIONES (CARGAR DATOS USUARIO E INICIALIZAR) ---
+// --- FUNCIONES COMPLEMENTARIAS ---
 async function cargarDatosUsuario() {
     try {
         const res = await fetch('/api/usuario/me');
@@ -68,7 +73,8 @@ async function cargarDatosUsuario() {
                 infoPs[2].innerText = user.strCorreo || '---';
                 infoPs[3].innerText = user.strCelular || 'No registrado';
             }
-            const foto = user.FotoUrl || '/img/default-avatar.png';
+            // Corregimos error de columna 'FotoUrl' si el backend no la manda
+            const foto = user.strFoto || user.FotoUrl || '/img/default-avatar.png';
             const navAvatar = document.getElementById('avatar-img');
             const sidebarAvatar = document.getElementById('sidebar-avatar-img');
             if (navAvatar) navAvatar.src = foto;
@@ -83,7 +89,10 @@ function inicializarMenu() {
         menu.addEventListener("click", function(e) {
             const submenu = this.nextElementSibling;
             if (!submenu || !submenu.classList.contains("submenu")) return;
-            e.preventDefault();
+            
+            // Si el enlace es "#", evitamos el salto de página
+            if(this.getAttribute("href") === "#") e.preventDefault();
+            
             document.querySelectorAll(".submenu").forEach(sub => {
                 if (sub !== submenu) sub.classList.remove("activo");
             });
@@ -105,8 +114,12 @@ function inicializarMenu() {
     }
 
     document.addEventListener("click", function(e) {
-        if (!e.target.closest(".menu")) document.querySelectorAll(".submenu").forEach(sub => sub.classList.remove("activo"));
-        if (sidebar && !sidebar.contains(e.target) && !avatar.contains(e.target)) sidebar.classList.remove('open');
+        if (!e.target.closest(".menu")) {
+            document.querySelectorAll(".submenu").forEach(sub => sub.classList.remove("activo"));
+        }
+        if (sidebar && !sidebar.contains(e.target) && !avatar.contains(e.target)) {
+            sidebar.classList.remove('open');
+        }
     });
 }
 
@@ -114,5 +127,5 @@ function inicializarMenu() {
 document.addEventListener("DOMContentLoaded", () => {
     inicializarMenu();
     cargarDatosUsuario();
-    cargarPermisosMenu(); // <--- Filtrado activado
+    cargarPermisosMenu(); 
 });
