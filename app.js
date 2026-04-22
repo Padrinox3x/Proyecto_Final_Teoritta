@@ -94,8 +94,8 @@ app.get('/logout', (req, res) => {
     });
 });
 
-app.get('/breadcrums', isAuthenticated, (req, res) => {
-    res.sendFile(__dirname + '/public/breadcrums.html');
+app.get('/principal', isAuthenticated, (req, res) => {
+    res.render('principal', { user: req.session.user });
 });
 
 // CRUDS

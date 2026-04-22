@@ -20,7 +20,7 @@ document.getElementById('formLogin').addEventListener('submit', async (e) => {
         console.log('RESPUESTA:', result);
 
         if (result.ok) {
-            window.location.href = '/breadcrums';
+            window.location.href = '/principal';
         } else {
             alert(result.msg || 'Error en login');
         }

@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Panel de Control - Sistema Express</title>
+    <link rel="stylesheet" href="/css/style.css"> <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .card i { font-size: 2.5rem; color: #3b5998; }
+        .card-info h3 { margin: 0; font-size: 0.9rem; color: #666; }
+        .card-info p { margin: 5px 0 0; font-size: 1.5rem; font-weight: bold; }
+        .welcome-section { padding: 20px; background: #f8f9fa; border-bottom: 1px solid #ddd; }
+    </style>
+</head>
+<body>
+
+    <%- include('partials/breadcrum') %>
+
+    <main class="content">
+        <section class="welcome-section">
+            <h1>Bienvenido, <%= user.strNombreUsuario %>!</h1>
+            <p>Hoy es <%= new Date().toLocaleDateString() %></p>
+        </section>
+
+        <div class="dashboard-grid">
+            <div class="card">
+                <div class="card-info">
+                    <h3>Usuarios Totales</h3>
+                    <p>03</p> </div>
+                <i class="fas fa-users"></i>
+            </div>
+
+            <div class="card">
+                <div class="card-info">
+                    <h3>Tu Rol</h3>
+                    <p><%= user.strNombrePerfil %></p>
+                </div>
+                <i class="fas fa-user-shield"></i>
+            </div>
+
+            <div class="card">
+                <div class="card-info">
+                    <h3>Estado Servidor</h3>
+                    <p>Activo</p>
+                </div>
+                <i class="fas fa-server" style="color: #28a745;"></i>
+            </div>
+
+            <div class="card">
+                <div class="card-info">
+                    <h3>Módulos</h3>
+                    <p>Seguridad</p>
+                </div>
+                <i class="fas fa-th-large"></i>
+            </div>
+        </div>
+
+        <section style="padding: 20px;">
+            <div class="card" style="display: block;">
+                <h3>Acciones Rápidas</h3>
+                <hr>
+                <div style="display: flex; gap: 10px; margin-top: 15px;">
+                    <a href="/usuario" class="btn-primary" style="text-decoration:none; padding:10px;">Gestionar Usuarios</a>
+                    <a href="/permisos" class="btn-primary" style="text-decoration:none; padding:10px; background:#6c757d;">Revisar Permisos</a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script src="/js/breadcrum.js"></script>
+</body>
+</html>
