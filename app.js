@@ -162,7 +162,7 @@ app.post('/api/usuario/upload-avatar', isAuthenticated, upload.single('imagen'),
 ======================= */
 app.get('/', (req, res) => {
     if (!req.session.user) return res.redirect('/login');
-    res.redirect('/breadcrums'); // O tu dashboard principal
+    res.redirect('/principal'); // O tu dashboard principal
 });
 
 app.get('/test-db', async (req, res) => {
