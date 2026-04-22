@@ -1,16 +1,15 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>CRUD Proveedores</title>
-<link rel="stylesheet" href="/css/Principal_1.1.css">
-<link rel="stylesheet" href="/css/breadcrums.css"> 
-<style>
-    /* Estilos para asegurar que la paginación se vea correctamente */
-    .pagination { margin-top: 15px; display: flex; gap: 10px; align-items: center; justify-content: center; }
-    .pagination button { padding: 5px 12px; cursor: pointer; border: 1px solid #ccc; background: #fff; border-radius: 4px; }
-    .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
-</style>
+    <meta charset="UTF-8">
+    <title>CRUD Proveedores - Principal 2.1</title>
+    <link rel="stylesheet" href="/css/Principal_1.1.css">
+    <link rel="stylesheet" href="/css/breadcrums.css"> 
+    <style>
+        .pagination { margin-top: 15px; display: flex; gap: 10px; align-items: center; justify-content: center; }
+        .pagination button { padding: 5px 12px; cursor: pointer; border: 1px solid #ccc; background: #fff; border-radius: 4px; }
+        .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
+    </style>
 </head>
 
 <body>
@@ -26,20 +25,20 @@
         <option value="15">15</option>
     </select>
 
-    <button id="btnNuevo" class="btn-add" onclick="openModal()">+</button>
+    <button id="btnNuevo" class="btn-add" onclick="openModal()" style="display: none;">+</button>
 </div>
 
 <table>
-<thead>
-<tr>
-    <th>Nombre</th>
-    <th>Apellidos</th>
-    <th>Teléfono</th>
-    <th>Correo</th>
-    <th>Acciones</th>
-</tr>
-</thead>
-<tbody id="tableBody"></tbody>
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Apellidos</th>
+            <th>Teléfono</th>
+            <th>Correo</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
 </table>
 
 <div class="pagination">
@@ -53,19 +52,14 @@
 <div class="modal" id="modal">
     <div class="modal-content">
         <h3 id="modalTitle">Registrar Proveedor</h3>
-        
         <label>Nombre</label>
-        <input id="nombreProveedor" placeholder="Ej. Juan" maxlength="50" oninput="this.value = this.value.replace(/[0-9]/g, '')">
-        
+        <input id="nombreProveedor" maxlength="50" oninput="this.value = this.value.replace(/[0-9]/g, '')">
         <label>Apellidos</label>
-        <input id="ApellidosProveedor" placeholder="Ej. Pérez" maxlength="50" oninput="this.value = this.value.replace(/[0-9]/g, '')">
-        
+        <input id="ApellidosProveedor" maxlength="50" oninput="this.value = this.value.replace(/[0-9]/g, '')">
         <label>Correo Electrónico</label>
-        <input id="Correo" type="email" placeholder="correo@ejemplo.com">
-        
+        <input id="Correo" type="email">
         <label>Teléfono</label>
-        <input id="Telefono" placeholder="Solo números" maxlength="15" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-        
+        <input id="Telefono" maxlength="15" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
         <div class="acciones-modal">
             <button class="btn-save" onclick="save()">Guardar</button>
             <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
@@ -81,61 +75,45 @@ let page = 1;
 let rows = 10;
 let editIndex = null;
 
-// --- 🛡️ ESTADO GLOBAL DE PERMISOS CORREGIDO ---
+// --- 🛡️ ESTADO GLOBAL DE PERMISOS ---
 let permisosModulo = {
     bitAgregar: 0, bitEditar: 0, bitConsulta: 0, bitEliminar: 0, bitDetalle: 0,
     bitAdministrador: 0 
 };
 
-// --- 🛡️ CARGAR PERMISOS DESDE EL SERVIDOR ---
+// --- 🛡️ CARGAR PERMISOS CORREGIDO ---
 async function cargarPermisos() {
     try {
-        const res = await fetch('/api/permisosPerfil/mis-permisos?modulo=Principal_1.2');
+        // CORRECCIÓN: Se cambia Principal_1.2 por Principal_2.1 para que coincida con la BD
+        const res = await fetch('/api/permisosPerfil/mis-permisos?modulo=Principal_2.1');
         permisosModulo = await res.json();
         
-        // Pase Maestro para el botón Nuevo
+        console.log("Permisos activos para este módulo:", permisosModulo);
+
+        // Control visual del botón Nuevo
         const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
         const btn = document.getElementById('btnNuevo');
         if(btn) btn.style.display = puedeAgregar ? 'block' : 'none';
 
     } catch (error) {
-        console.error("Error cargando permisos de Proveedores:", error);
+        console.error("Error cargando permisos:", error);
     }
-}
-
-function persist(){
-    localStorage.setItem("proveedores", JSON.stringify(data));
-}
-
-function totalPages(filteredLength){
-    return Math.ceil(filteredLength / rows) || 1;
-}
-
-function getFilteredData(){
-    let search = document.getElementById("search").value.toLowerCase();
-    return data.filter(d =>
-        (d.nombreProveedor || "").toLowerCase().includes(search) ||
-        (d.apellidosProveedor || "").toLowerCase().includes(search) ||
-        (d.correo || "").toLowerCase().includes(search) ||
-        (d.telefono || "").toString().includes(search)
-    );
 }
 
 function render(){
     let tbody = document.getElementById("tableBody");
     tbody.innerHTML = "";
     let filtered = getFilteredData();
-    let total = totalPages(filtered.length);
+    let total = Math.ceil(filtered.length / rows) || 1;
 
-    if(page > total) page = total || 1;
-
+    if(page > total) page = total;
     let start = (page-1)*rows;
     let paginated = filtered.slice(start, start+rows);
 
     paginated.forEach((d) => {
         let realIndex = data.indexOf(d); 
         
-        // --- 🛡️ LÓGICA DE BOTONES CON PASE MAESTRO ---
+        // --- 🛡️ LÓGICA DE BOTONES ---
         const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
         const puedeEliminar = permisosModulo.bitAdministrador || permisosModulo.bitEliminar;
 
@@ -146,6 +124,8 @@ function render(){
         if (puedeEliminar) {
             botonesAccion += `<button class="btn-delete" onclick="del(${realIndex})">🗑</button>`;
         }
+        
+        // Si no tiene ningún permiso de escritura
         if (!puedeEditar && !puedeEliminar) {
             botonesAccion = '<span style="color:gray; font-size:11px;">Solo lectura</span>';
         }
@@ -160,38 +140,22 @@ function render(){
         </tr>`;
     });
 
-    // Actualizar paginación
     document.getElementById("pageInfo").innerText = `Página ${page} de ${total}`;
-    document.getElementById("btnPrev").disabled = (page === 1);
-    document.getElementById("btnFirst").disabled = (page === 1);
-    document.getElementById("btnNext").disabled = (page === total);
-    document.getElementById("btnLast").disabled = (page === total);
 }
 
-// --- 🚩 FUNCIONES DE NAVEGACIÓN ---
-function firstPage() { page = 1; render(); }
-function prevPage() { if (page > 1) { page--; render(); } }
-function nextPage() { 
-    if (page < totalPages(getFilteredData().length)) { page++; render(); } 
-}
-function lastPage() { page = totalPages(getFilteredData().length); render(); }
-
-// --- MODAL OPS ---
-function openModal() {
-    document.getElementById("modal").style.display = "flex";
+// --- FUNCIONES RESTANTES ---
+function getFilteredData(){
+    let search = document.getElementById("search").value.toLowerCase();
+    return data.filter(d =>
+        (d.nombreProveedor || "").toLowerCase().includes(search) ||
+        (d.apellidosProveedor || "").toLowerCase().includes(search)
+    );
 }
 
-function closeModal() {
-    document.getElementById("modal").style.display = "none";
-    document.getElementById("nombreProveedor").value = "";
-    document.getElementById("ApellidosProveedor").value = "";
-    document.getElementById("Correo").value = "";
-    document.getElementById("Telefono").value = "";
-    document.getElementById("modalTitle").innerText = "Registrar Proveedor";
-    editIndex = null;
-}
+function persist(){ localStorage.setItem("proveedores", JSON.stringify(data)); }
+function openModal() { document.getElementById("modal").style.display = "flex"; }
+function closeModal() { document.getElementById("modal").style.display = "none"; editIndex = null; }
 
-/* 🛡️ GUARDAR PROTEGIDO */
 function save(){
     const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
     const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
@@ -201,19 +165,12 @@ function save(){
 
     const nombre = document.getElementById("nombreProveedor").value.trim();
     const apellidos = document.getElementById("ApellidosProveedor").value.trim();
-    const correo = document.getElementById("Correo").value.trim();
-    const telefono = document.getElementById("Telefono").value.trim();
-
-    if(!nombre || !apellidos || !correo || !telefono){
-        alert("❌ Todos los campos son obligatorios.");
-        return;
-    }
-
+    
     let obj = {
         nombreProveedor: nombre,
         apellidosProveedor: apellidos,
-        correo: correo,
-        telefono: telefono
+        correo: document.getElementById("Correo").value,
+        telefono: document.getElementById("Telefono").value
     };
 
     if(editIndex !== null) data[editIndex] = obj;
@@ -225,36 +182,24 @@ function save(){
 }
 
 function edit(i){
+    editIndex = i;
     let d = data[i];
     document.getElementById("nombreProveedor").value = d.nombreProveedor;
     document.getElementById("ApellidosProveedor").value = d.apellidosProveedor;
-    document.getElementById("Correo").value = d.correo;
-    document.getElementById("Telefono").value = d.telefono;
     document.getElementById("modalTitle").innerText = "Editar Proveedor";
-    editIndex = i;
     openModal();
 }
 
 function del(i){
-    const puedeEliminar = permisosModulo.bitAdministrador || permisosModulo.bitEliminar;
-    if(!puedeEliminar) return alert("❌ No tienes permiso para eliminar.");
-    
-    if(confirm("¿Seguro que deseas eliminar este proveedor?")){
+    if(!(permisosModulo.bitAdministrador || permisosModulo.bitEliminar)) return alert("❌ Sin permiso.");
+    if(confirm("¿Eliminar?")){
         data.splice(i,1);
         persist();
         render();
     }
 }
 
-// Listeners
-document.getElementById("search").addEventListener("input", () => { page = 1; render(); });
-document.getElementById("rows").addEventListener("change", (e) => { 
-    rows = parseInt(e.target.value); 
-    page = 1; 
-    render(); 
-});
-
-// --- 🛡️ INICIALIZACIÓN ---
+// Inicialización
 document.addEventListener("DOMContentLoaded", async () => {
     await cargarPermisos(); 
     render(); 
