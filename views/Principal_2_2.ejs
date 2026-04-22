@@ -82,7 +82,7 @@ let page = 1;
 let rows = 10;
 let editIndex = null;
 
-// --- 🛡️ ESTADO GLOBAL DE PERMISOS CORREGIDO ---
+// --- 🛡️ ESTADO GLOBAL DE PERMISOS BLINDADO ---
 let permisosModulo = {
     bitAgregar: 0, bitEditar: 0, bitConsulta: 0, bitEliminar: 0, bitDetalle: 0,
     bitAdministrador: 0 
@@ -92,15 +92,21 @@ let permisosModulo = {
 async function cargarPermisos() {
     try {
         const res = await fetch('/api/permisosPerfil/mis-permisos?modulo=Principal_2_2');
-        permisosModulo = await res.json();
+        const json = await res.json();
         
-        // Pase Maestro para el botón Nuevo
+        if (json) {
+            permisosModulo = json;
+            console.log("Permisos cargados para Sucursales:", permisosModulo);
+        }
+        
+        // Aplicar visibilidad del botón nuevo inmediatamente
         const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
         const btn = document.getElementById('btnNuevo');
         if(btn) btn.style.display = puedeAgregar ? 'block' : 'none';
 
     } catch (error) {
-        console.error("Error cargando permisos de Sucursales:", error);
+        console.error("Error crítico cargando permisos de Sucursales:", error);
+        // Mantenemos permisos en 0 por seguridad ante errores de red
     }
 }
 
@@ -132,13 +138,13 @@ function render(){
     let start = (page-1)*rows;
     let paginated = filtered.slice(start, start+rows);
 
+    // Definimos constantes de permiso para el loop
+    const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
+    const puedeEliminar = permisosModulo.bitAdministrador || permisosModulo.bitEliminar;
+
     paginated.forEach((d) => {
         let realIndex = data.indexOf(d); 
         
-        // --- 🛡️ LÓGICA DE BOTONES CON PASE MAESTRO ---
-        const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
-        const puedeEliminar = permisosModulo.bitAdministrador || permisosModulo.bitEliminar;
-
         let botonesAccion = "";
         if (puedeEditar) {
             botonesAccion += `<button class="btn-edit" onclick="edit(${realIndex})">✏️</button> `;
@@ -167,7 +173,7 @@ function render(){
     document.getElementById("btnLast").disabled = (page === total);
 }
 
-/* 🚩 FUNCIONES DE NAVEGACIÓN CORREGIDAS */
+/* 🚩 NAVEGACIÓN */
 function firstPage(){ page = 1; render(); }
 function lastPage(){ page = totalPages(getFilteredData().length); render(); }
 function nextPage(){ if(page < totalPages(getFilteredData().length)){ page++; render(); } }
@@ -184,7 +190,7 @@ function clear(){
     editIndex = null;
 }
 
-/* 🛡️ GUARDAR CON VALIDACIÓN DE PERMISOS */
+/* 🛡️ GUARDAR PROTEGIDO */
 function save(){
     const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
     const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
@@ -201,17 +207,10 @@ function save(){
         return;
     }
 
-    let obj = {
-        nombre: nombre,
-        direccion: direccion,
-        ciudad: ciudad
-    };
+    let obj = { nombre, direccion, ciudad };
 
-    if(editIndex !== null){
-        data[editIndex] = obj;
-    }else{
-        data.push(obj);
-    }
+    if(editIndex !== null) data[editIndex] = obj;
+    else data.push(obj);
 
     persist();
     closeModal();
@@ -239,7 +238,7 @@ function del(i){
     }
 }
 
-// Listeners para búsqueda y filas
+// Listeners
 document.getElementById("search").addEventListener("input", () => { page = 1; render(); });
 document.getElementById("rows").addEventListener("change", (e) => { 
     rows = parseInt(e.target.value); 
@@ -253,6 +252,5 @@ document.addEventListener("DOMContentLoaded", async () => {
     render(); 
 });
 </script>
-
 </body>
 </html>
