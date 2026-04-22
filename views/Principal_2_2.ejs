@@ -5,12 +5,19 @@
     <title>CRUD Empleados - Principal 2.2</title>
     <link rel="stylesheet" href="/css/Principal_1.1.css">
     <link rel="stylesheet" href="/css/breadcrums.css"> 
+
     <style>
         .pagination { margin-top: 15px; display: flex; gap: 10px; align-items: center; justify-content: center; }
         .pagination button { padding: 5px 12px; cursor: pointer; border: 1px solid #ccc; background: #fff; border-radius: 4px; }
         .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
-        /* Oculto por defecto para evitar parpadeo visual */
+
         #btnNuevo { display: none; }
+
+        .no-access {
+            text-align: center;
+            margin-top: 80px;
+            color: #334155;
+        }
     </style>
 </head>
 
@@ -44,70 +51,108 @@
 </table>
 
 <div class="pagination">
-    <button id="btnFirst" onclick="firstPage()">⏮</button>
-    <button id="btnPrev" onclick="prevPage()">◀</button>
+    <button onclick="firstPage()">⏮</button>
+    <button onclick="prevPage()">◀</button>
     <span id="pageInfo"></span>
-    <button id="btnNext" onclick="nextPage()">▶</button>
-    <button id="btnLast" onclick="lastPage()">⏭</button>
+    <button onclick="nextPage()">▶</button>
+    <button onclick="lastPage()">⏭</button>
 </div>
 
-<div class="modal" id="modal" style="display: none;">
+<div class="modal" id="modal" style="display:none;">
     <div class="modal-content">
         <h3 id="modalTitle">Registrar Empleado</h3>
-        
+
         <label>Nombre</label>
-        <input id="nombreProveedor" placeholder="Ej. Juan" maxlength="50" oninput="this.value = this.value.replace(/[0-9]/g, '')">
-        
+        <input id="nombreProveedor" maxlength="50" oninput="this.value=this.value.replace(/[0-9]/g,'')">
+
         <label>Apellidos</label>
-        <input id="ApellidosProveedor" placeholder="Ej. Pérez" maxlength="50" oninput="this.value = this.value.replace(/[0-9]/g, '')">
-        
-        <label>Correo Electrónico</label>
-        <input id="Correo" type="email" placeholder="correo@ejemplo.com">
-        
+        <input id="ApellidosProveedor" maxlength="50" oninput="this.value=this.value.replace(/[0-9]/g,'')">
+
+        <label>Correo</label>
+        <input id="Correo" type="email">
+
         <label>Teléfono</label>
-        <input id="Telefono" placeholder="Solo números" maxlength="15" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
-        
+        <input id="Telefono" maxlength="15" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+
         <div class="acciones-modal">
-            <button class="btn-save" onclick="save()">Guardar</button>
-            <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+            <button onclick="save()">Guardar</button>
+            <button onclick="closeModal()">Cancelar</button>
         </div>
     </div>
 </div>
 
-<script src="/js/breadcrums.js"></script> 
+<script src="/js/breadcrums.js"></script>
 
 <script>
+// =========================
+// DATA
+// =========================
 let data = JSON.parse(localStorage.getItem("empleados_sucursal")) || [];
 let page = 1;
 let rows = 10;
 let editIndex = null;
 
-// --- 🛡️ ESTADO GLOBAL DE PERMISOS ---
+// =========================
+// PERMISOS BASE SEGURO
+// =========================
 let permisosModulo = {
-    bitAgregar: 0, bitEditar: 0, bitConsulta: 0, bitEliminar: 0, bitDetalle: 0,
-    bitAdministrador: 0 
+    bitAgregar: 0,
+    bitEditar: 0,
+    bitConsulta: 1, // 👈 clave
+    bitEliminar: 0,
+    bitDetalle: 0,
+    bitAdministrador: 0
 };
 
-// --- 🛡️ CARGAR PERMISOS (Sincronizado) ---
-async function cargarPermisos() {
-    try {
+// =========================
+// CARGAR PERMISOS ROBUSTO
+// =========================
+async function cargarPermisos(){
+    try{
         const res = await fetch('/api/permisosPerfil/mis-permisos?modulo=Principal_2.2');
-        permisosModulo = await res.json();
-        
-        const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
-        const btn = document.getElementById('btnNuevo');
-        if(btn) btn.style.display = puedeAgregar ? 'block' : 'none';
-    } catch (error) {
-        console.error("Error cargando permisos:", error);
+
+        if(res.ok){
+            const result = await res.json();
+            if(result) permisosModulo = result;
+        }else{
+            console.warn("Sin permisos → modo lectura");
+        }
+
+    }catch(e){
+        console.error("Error permisos:", e);
     }
+
+    // 🔒 VALIDAR ACCESO
+    if(!(permisosModulo.bitAdministrador || permisosModulo.bitConsulta)){
+        document.body.innerHTML = `
+            <div class="no-access">
+                <h2>⛔ Acceso denegado</h2>
+                <p>No tienes permisos para este módulo</p>
+            </div>
+        `;
+        return false;
+    }
+
+    // BOTÓN NUEVO
+    const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
+    document.getElementById("btnNuevo").style.display = puedeAgregar ? "block" : "none";
+
+    return true;
 }
 
+// =========================
+// STORAGE
+// =========================
 function persist(){
     localStorage.setItem("empleados_sucursal", JSON.stringify(data));
 }
 
+// =========================
+// FILTRO
+// =========================
 function getFilteredData(){
     const search = (document.getElementById("search").value || "").toLowerCase();
+
     return data.filter(d =>
         (d.nombreProveedor || "").toLowerCase().includes(search) ||
         (d.apellidosProveedor || "").toLowerCase().includes(search) ||
@@ -116,35 +161,43 @@ function getFilteredData(){
     );
 }
 
+// =========================
+// RENDER
+// =========================
 function render(){
+
+    if(!(permisosModulo.bitAdministrador || permisosModulo.bitConsulta)) return;
+
     const tbody = document.getElementById("tableBody");
-    if (!tbody) return;
     tbody.innerHTML = "";
 
     const filtered = getFilteredData();
     const total = Math.ceil(filtered.length / rows) || 1;
 
-    if(page > total) page = total || 1;
+    if(page > total) page = total;
 
     const start = (page - 1) * rows;
     const paginated = filtered.slice(start, start + rows);
 
-    paginated.forEach((d) => {
-        const realIndex = data.indexOf(d); 
-        
+    paginated.forEach(d => {
+
+        const i = data.indexOf(d);
+
         const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
         const puedeEliminar = permisosModulo.bitAdministrador || permisosModulo.bitEliminar;
 
-        let botonesAccion = "";
-        if (puedeEditar) {
-            botonesAccion += `<button class="btn-edit" onclick="edit(${realIndex})">✏️</button> `;
+        let acciones = "";
+
+        if(puedeEditar){
+            acciones += `<button onclick="edit(${i})">✏️</button> `;
         }
-        if (puedeEliminar) {
-            botonesAccion += `<button class="btn-delete" onclick="del(${realIndex})">🗑</button>`;
+
+        if(puedeEliminar){
+            acciones += `<button onclick="del(${i})">🗑</button>`;
         }
-        
-        if (!puedeEditar && !puedeEliminar) {
-            botonesAccion = '<span style="color:gray; font-size:11px;">Solo lectura</span>';
+
+        if(!acciones){
+            acciones = `<span style="color:gray;">Solo lectura</span>`;
         }
 
         tbody.innerHTML += `
@@ -153,54 +206,65 @@ function render(){
             <td>${d.apellidosProveedor || ''}</td>
             <td>${d.telefono || ''}</td>
             <td>${d.correo || ''}</td>
-            <td>${botonesAccion}</td>
+            <td>${acciones}</td>
         </tr>`;
     });
 
     document.getElementById("pageInfo").innerText = `Página ${page} de ${total}`;
-    document.getElementById("btnPrev").disabled = (page === 1);
-    document.getElementById("btnFirst").disabled = (page === 1);
-    document.getElementById("btnNext").disabled = (page === total);
-    document.getElementById("btnLast").disabled = (page === total);
 }
 
-// --- NAVEGACIÓN ---
-function firstPage() { page = 1; render(); }
-function prevPage() { if (page > 1) { page--; render(); } }
-function nextPage() { 
+// =========================
+// PAGINACIÓN
+// =========================
+function firstPage(){ page=1; render(); }
+function prevPage(){ if(page>1){ page--; render(); } }
+function nextPage(){
     let total = Math.ceil(getFilteredData().length / rows) || 1;
-    if (page < total) { page++; render(); } 
+    if(page<total){ page++; render(); }
 }
-function lastPage() { page = Math.ceil(getFilteredData().length / rows) || 1; render(); }
+function lastPage(){ page = Math.ceil(getFilteredData().length / rows) || 1; render(); }
 
-// --- MODAL ---
-function openModal() { document.getElementById("modal").style.display = "flex"; }
-function closeModal() {
+// =========================
+// MODAL
+// =========================
+function openModal(){
+    if(!(permisosModulo.bitAdministrador || permisosModulo.bitAgregar))
+        return alert("❌ Sin permiso");
+
+    document.getElementById("modal").style.display = "flex";
+}
+
+function closeModal(){
     document.getElementById("modal").style.display = "none";
-    document.getElementById("nombreProveedor").value = "";
-    document.getElementById("ApellidosProveedor").value = "";
-    document.getElementById("Correo").value = "";
-    document.getElementById("Telefono").value = "";
-    document.getElementById("modalTitle").innerText = "Registrar Empleado";
-    editIndex = null;
+    document.getElementById("nombreProveedor").value="";
+    document.getElementById("ApellidosProveedor").value="";
+    document.getElementById("Correo").value="";
+    document.getElementById("Telefono").value="";
+    editIndex=null;
 }
 
-// --- CRUD ---
+// =========================
+// CRUD
+// =========================
 function save(){
+
     const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
     const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
 
-    if(editIndex !== null && !puedeEditar) return alert("❌ Sin permiso de edición.");
-    if(editIndex === null && !puedeAgregar) return alert("❌ Sin permiso de creación.");
+    if(editIndex !== null && !puedeEditar) return alert("❌ Sin permiso editar");
+    if(editIndex === null && !puedeAgregar) return alert("❌ Sin permiso crear");
 
     const nombre = document.getElementById("nombreProveedor").value.trim();
     const apellidos = document.getElementById("ApellidosProveedor").value.trim();
-    const correo = document.getElementById("Correo").value.trim();
-    const telefono = document.getElementById("Telefono").value.trim();
 
-    if(!nombre || !apellidos) return alert("❌ Nombre y Apellidos son obligatorios.");
+    if(!nombre || !apellidos) return alert("Campos obligatorios");
 
-    const obj = { nombreProveedor: nombre, apellidosProveedor: apellidos, correo, telefono };
+    const obj = {
+        nombreProveedor: nombre,
+        apellidosProveedor: apellidos,
+        correo: document.getElementById("Correo").value.trim(),
+        telefono: document.getElementById("Telefono").value.trim()
+    };
 
     if(editIndex !== null) data[editIndex] = obj;
     else data.push(obj);
@@ -211,34 +275,45 @@ function save(){
 }
 
 function edit(i){
-    editIndex = i;
+    if(!(permisosModulo.bitAdministrador || permisosModulo.bitEditar))
+        return alert("❌ Sin permiso");
+
     const d = data[i];
+
     document.getElementById("nombreProveedor").value = d.nombreProveedor;
     document.getElementById("ApellidosProveedor").value = d.apellidosProveedor;
     document.getElementById("Correo").value = d.correo;
     document.getElementById("Telefono").value = d.telefono;
-    document.getElementById("modalTitle").innerText = "Editar Empleado";
+
+    editIndex = i;
     openModal();
 }
 
 function del(i){
-    if(!(permisosModulo.bitAdministrador || permisosModulo.bitEliminar)) return alert("❌ Sin permiso.");
-    if(confirm("¿Seguro que deseas eliminar este registro?")){
+    if(!(permisosModulo.bitAdministrador || permisosModulo.bitEliminar))
+        return alert("❌ Sin permiso");
+
+    if(confirm("¿Eliminar registro?")){
         data.splice(i,1);
         persist();
         render();
     }
 }
 
-// Listeners
-document.getElementById("search").addEventListener("input", () => { page = 1; render(); });
-document.getElementById("rows").addEventListener("change", (e) => { rows = parseInt(e.target.value); page = 1; render(); });
+// =========================
+// EVENTOS
+// =========================
+document.getElementById("search").addEventListener("input", ()=>{ page=1; render(); });
+document.getElementById("rows").addEventListener("change",(e)=>{ rows=parseInt(e.target.value); page=1; render(); });
 
-// --- 🚀 INICIALIZACIÓN ---
-document.addEventListener("DOMContentLoaded", async () => {
-    await cargarPermisos(); 
-    render(); 
+// =========================
+// INIT
+// =========================
+document.addEventListener("DOMContentLoaded", async ()=>{
+    const acceso = await cargarPermisos();
+    if(acceso) render();
 });
 </script>
+
 </body>
 </html>
