@@ -91,16 +91,31 @@ let permisosModulo = {
 // --- 🛡️ CARGAR PERMISOS (Sincronizado) ---
 async function cargarPermisos() {
     try {
-        const res = await fetch('/api/permisosPerfil/mis-permisos?modulo=Principal_1.1');
-        permisosModulo = await res.json();
+        // CORRECCIÓN: Usar el módulo correcto 2.2
+        const res = await fetch('/api/permisosPerfil/mis-permisos?modulo=Principal_2.2');
+        
+        if (!res.ok) {
+            console.warn("El usuario no tiene permisos definidos para este módulo.");
+            return; // Salimos sin romper el resto
+        }
+
+        const result = await res.json();
+        
+        // Si el resultado es null o undefined (común en usuarios no admin sin fila en DB)
+        if (!result) return; 
+
+        permisosModulo = result;
         
         const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
         const btn = document.getElementById('btnNuevo');
         if(btn) btn.style.display = puedeAgregar ? 'block' : 'none';
+
     } catch (error) {
-        console.error("Error cargando permisos:", error);
+        console.error("Error cargando permisos de Empleados:", error);
     }
 }
+
+// --- 🚀 INICIALIZACIÓN ---
 
 function persist(){
     localStorage.setItem("empleados_sucursal", JSON.stringify(data));
@@ -236,8 +251,14 @@ document.getElementById("rows").addEventListener("change", (e) => { rows = parse
 
 // --- 🚀 INICIALIZACIÓN ---
 document.addEventListener("DOMContentLoaded", async () => {
-    await cargarPermisos(); 
-    render(); 
+    // IMPORTANTE: Envolver en try/catch para que si uno falla, el otro intente cargar
+    try {
+        await cargarPermisos(); 
+    } catch (e) { console.error("Fallo carga permisos modulo"); }
+    
+    try {
+        render(); 
+    } catch (e) { console.error("Fallo render tabla"); }
 });
 </script>
 </body>

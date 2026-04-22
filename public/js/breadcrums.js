@@ -5,6 +5,7 @@
 // 🔥 NORMALIZADOR (CLAVE)
 function normalizar(texto) {
     return (texto || "")
+        .toString()
         .toLowerCase()
         .replace(/\s+/g, "_")
         .trim();
@@ -17,19 +18,28 @@ async function cargarPermisosMenu() {
             credentials: 'include'
         });
 
-        if (!res.ok) return false;
+        if (!res.ok) {
+            console.warn("⚠️ No se pudo obtener la lista de menús.");
+            return false;
+        }
 
         const data = await res.json();
+        
+        // LOG DE DEPURACIÓN: Revisa esto en la consola del navegador (F12)
+        console.log("📊 Datos de menú recibidos:", data);
 
-        // 🔥 DETECTAR ADMIN
+        if (!Array.isArray(data)) {
+            console.error("❌ El backend no devolvió un array de menús.");
+            return false;
+        }
+
+        // 🔥 DETECTAR ADMIN (Validación más flexible)
         const esAdmin = data.some(m =>
-            m.bitAdministrador == 1 || m.bitAdministrador === true
+            m.bitAdministrador == 1 || m.bitAdministrador === true || m.bitAdministrador === "true"
         );
 
         // 🔥 NORMALIZAR MENÚS RECIBIDOS DEL BACKEND
-        const menusPermitidos = data.map(m =>
-            normalizar(m.strNombreMenu)
-        );
+        const menusPermitidos = data.map(m => normalizar(m.strNombreMenu));
 
         // 🔥 FILTRAR ITEMS DEL SUBMENÚ
         document.querySelectorAll(".submenu li").forEach(li => {
@@ -37,26 +47,32 @@ async function cargarPermisosMenu() {
 
             if (!menuHTML) return;
 
+            // Si es admin, tiene permiso. Si no, verificamos si el nombre está en la lista permitida.
             const tienePermiso = esAdmin || menusPermitidos.includes(menuHTML);
 
             li.style.display = tienePermiso ? "block" : "none";
         });
 
-        // 🔥 OCULTAR MENÚS PADRE (SEGURIDAD, PRINCIPAL, ETC.) SI ESTÁN VACÍOS
+        // 🔥 OCULTAR MENÚS PADRE SI ESTÁN VACÍOS
         document.querySelectorAll(".menu > ul > li").forEach(menu => {
             const submenu = menu.querySelector(".submenu");
             if (!submenu) return;
 
-            const visibles = Array.from(submenu.querySelectorAll("li"))
+            // Un menú padre es visible solo si tiene al menos un hijo visible
+            const hijosVisibles = Array.from(submenu.querySelectorAll("li"))
                 .filter(li => li.style.display !== "none");
 
-            menu.style.display = visibles.length > 0 ? "block" : "none";
+            if (esAdmin) {
+                menu.style.display = "block";
+            } else {
+                menu.style.display = hijosVisibles.length > 0 ? "block" : "none";
+            }
         });
 
-        return true; // Retornamos éxito para el await
+        return true;
 
     } catch (err) {
-        console.error("❌ Error filtrando menú:", err);
+        console.error("❌ Error crítico filtrando menú:", err);
         return false;
     }
 }
@@ -64,17 +80,12 @@ async function cargarPermisosMenu() {
 // --- FUNCIONES COMPLEMENTARIAS ---
 async function cargarDatosUsuario() {
     try {
-        const res = await fetch('/api/usuario/me', {
-            credentials: 'include'
-        });
-
-        if (!res.ok) throw new Error("No se pudo obtener la sesión");
+        const res = await fetch('/api/usuario/me', { credentials: 'include' });
+        if (!res.ok) return;
 
         const user = await res.json();
-
         if (user) {
             const infoPs = document.querySelectorAll('.profile-info p span');
-
             if (infoPs.length >= 4) {
                 infoPs[0].innerText = user.strNombreUsuario || '---';
                 infoPs[1].innerText = user.PerfilNombre || 'Usuario';
@@ -82,29 +93,25 @@ async function cargarDatosUsuario() {
                 infoPs[3].innerText = user.strCelular || 'No registrado';
             }
 
-            // Soporte para ambas nomenclaturas de imagen
             const foto = user.strFoto || user.FotoUrl || '/img/default-avatar.png';
-
             const navAvatar = document.getElementById('avatar-img');
             const sidebarAvatar = document.getElementById('sidebar-avatar-img');
 
             if (navAvatar) navAvatar.src = foto;
             if (sidebarAvatar) sidebarAvatar.src = foto;
         }
-
     } catch (err) {
         console.error("❌ Error datos usuario:", err);
     }
 }
 
-// --- MENÚ INTERACTIVO (SIDEBAR Y DROPDOWNS) ---
+// --- MENÚ INTERACTIVO ---
 function inicializarMenu() {
     const menus = document.querySelectorAll(".menu > ul > li > a");
 
     menus.forEach(menu => {
         menu.addEventListener("click", function(e) {
             const submenu = this.nextElementSibling;
-
             if (!submenu || !submenu.classList.contains("submenu")) return;
 
             if (this.getAttribute("href") === "#") e.preventDefault();
@@ -135,31 +142,22 @@ function inicializarMenu() {
         }
     }
 
-    // Cerrar al hacer clic fuera
     document.addEventListener("click", function(e) {
         if (!e.target.closest(".menu")) {
             document.querySelectorAll(".submenu").forEach(sub => {
                 sub.classList.remove("activo");
             });
         }
-
-        if (sidebar && !sidebar.contains(e.target) && !avatar.contains(e.target)) {
+        if (sidebar && !sidebar.contains(e.target) && avatar && !avatar.contains(e.target)) {
             sidebar.classList.remove('open');
         }
     });
 }
 
-// --- 🚀 INICIALIZACIÓN SÍNCRONA ---
+// --- 🚀 INICIALIZACIÓN ---
 document.addEventListener("DOMContentLoaded", async () => {
-    // 1. Configuramos los eventos de clic
     inicializarMenu();
-    
-    // 2. Cargamos datos estéticos del usuario
     cargarDatosUsuario();
-    
-    // 3. Bloqueamos hasta que los permisos del menú se apliquen
-    // Esto evita que el menú "parpadee" o se muestre incompleto
     await cargarPermisosMenu();
-    
     console.log("✅ Menú procesado correctamente");
 });
