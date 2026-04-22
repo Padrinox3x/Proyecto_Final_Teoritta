@@ -2,6 +2,14 @@
  * Lógica para el Menú de Navegación y Sidebar de Usuario
  */
 
+// 🔥 NORMALIZADOR GLOBAL (CLAVE DEL ÉXITO)
+function normalizar(texto) {
+    return (texto || "")
+        .toLowerCase()
+        .replace(/\./g, "_")   // 👈 convierte . → _
+        .trim();
+}
+
 // --- 🛡️ FUNCIÓN DE FILTRADO DE MENÚ ---
 async function cargarPermisosMenu() {
     try {
@@ -10,7 +18,9 @@ async function cargarPermisosMenu() {
 
         const data = await res.json();
 
-        // 🔥 Detectar si es admin
+        console.log("PERMISOS BACKEND:", data); // 🔥 DEBUG
+
+        // 🔥 Detectar ADMIN correctamente
         const esAdmin = data.some(p => 
             p.bitAdministrador == 1 || 
             p.bitAdministrador === true
@@ -18,19 +28,23 @@ async function cargarPermisosMenu() {
 
         // 🔥 Normalizar módulos (soporta string u objeto)
         const modulosPermitidos = data.map(m => {
-            if (typeof m === "string") return m.toLowerCase().trim();
-            return (m.strNombreModulo || "").toLowerCase().trim();
+            if (typeof m === "string") return normalizar(m);
+            return normalizar(m.strNombreModulo);
         });
 
-        // 🔥 Seleccionamos los LI (no los <a>)
+        console.log("MODULOS NORMALIZADOS:", modulosPermitidos); // 🔥 DEBUG
+
+        // 🔥 Seleccionamos TODOS los items con data-modulo
         const items = document.querySelectorAll(".submenu li");
 
         items.forEach(li => {
-            const modulo = (li.dataset.modulo || "").toLowerCase().trim();
+            const moduloHTML = normalizar(li.dataset.modulo);
 
-            if (!modulo) return;
+            if (!moduloHTML) return;
 
-            const tienePermiso = esAdmin || modulosPermitidos.includes(modulo);
+            const tienePermiso = esAdmin || modulosPermitidos.includes(moduloHTML);
+
+            console.log("CHECK:", moduloHTML, tienePermiso); // 🔥 DEBUG
 
             li.style.display = tienePermiso ? "block" : "none";
         });
@@ -43,13 +57,11 @@ async function cargarPermisosMenu() {
             const visibles = Array.from(submenu.querySelectorAll("li"))
                 .filter(li => li.style.display !== "none");
 
-            if (visibles.length === 0) {
-                menu.style.display = "none";
-            }
+            menu.style.display = visibles.length > 0 ? "block" : "none";
         });
 
     } catch (err) {
-        console.error("Error filtrando menú:", err);
+        console.error("❌ Error filtrando menú:", err);
     }
 }
 
@@ -58,39 +70,49 @@ async function cargarDatosUsuario() {
     try {
         const res = await fetch('/api/usuario/me');
         if (!res.ok) throw new Error("No se pudo obtener la sesión");
+
         const user = await res.json();
 
         if (user) {
             const infoPs = document.querySelectorAll('.profile-info p span');
+
             if (infoPs.length >= 4) {
                 infoPs[0].innerText = user.strNombreUsuario || '---';
                 infoPs[1].innerText = user.PerfilNombre || 'Usuario';
                 infoPs[2].innerText = user.strCorreo || '---';
                 infoPs[3].innerText = user.strCelular || 'No registrado';
             }
-            // Corregimos error de columna 'FotoUrl' si el backend no la manda
+
             const foto = user.strFoto || user.FotoUrl || '/img/default-avatar.png';
+
             const navAvatar = document.getElementById('avatar-img');
             const sidebarAvatar = document.getElementById('sidebar-avatar-img');
+
             if (navAvatar) navAvatar.src = foto;
             if (sidebarAvatar) sidebarAvatar.src = foto;
         }
-    } catch (err) { console.error("Error datos usuario:", err); }
+
+    } catch (err) {
+        console.error("❌ Error datos usuario:", err);
+    }
 }
 
+// --- MENÚ INTERACTIVO ---
 function inicializarMenu() {
     const menus = document.querySelectorAll(".menu > ul > li > a");
+
     menus.forEach(menu => {
         menu.addEventListener("click", function(e) {
             const submenu = this.nextElementSibling;
+
             if (!submenu || !submenu.classList.contains("submenu")) return;
-            
-            // Si el enlace es "#", evitamos el salto de página
-            if(this.getAttribute("href") === "#") e.preventDefault();
-            
+
+            if (this.getAttribute("href") === "#") e.preventDefault();
+
             document.querySelectorAll(".submenu").forEach(sub => {
                 if (sub !== submenu) sub.classList.remove("activo");
             });
+
             submenu.classList.toggle("activo");
         });
     });
@@ -103,15 +125,23 @@ function inicializarMenu() {
         avatar.addEventListener('click', (e) => {
             e.stopPropagation();
             sidebar.classList.add('open');
-            cargarDatosUsuario(); 
+            cargarDatosUsuario();
         });
-        if (closeSidebar) closeSidebar.addEventListener('click', () => sidebar.classList.remove('open'));
+
+        if (closeSidebar) {
+            closeSidebar.addEventListener('click', () => {
+                sidebar.classList.remove('open');
+            });
+        }
     }
 
     document.addEventListener("click", function(e) {
         if (!e.target.closest(".menu")) {
-            document.querySelectorAll(".submenu").forEach(sub => sub.classList.remove("activo"));
+            document.querySelectorAll(".submenu").forEach(sub => {
+                sub.classList.remove("activo");
+            });
         }
+
         if (sidebar && !sidebar.contains(e.target) && !avatar.contains(e.target)) {
             sidebar.classList.remove('open');
         }
@@ -122,5 +152,5 @@ function inicializarMenu() {
 document.addEventListener("DOMContentLoaded", () => {
     inicializarMenu();
     cargarDatosUsuario();
-    cargarPermisosMenu(); 
+    cargarPermisosMenu();
 });

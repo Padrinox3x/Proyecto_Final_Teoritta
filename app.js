@@ -8,7 +8,6 @@ const { sql, conectarDB } = require('./db');
 
 // 🔐 Middleware de autenticación
 const isAuthenticated = require('./middlewares/auth');
-const injectPermissions = require('./middlewares/injectPermissions');
 
 // 🔥 Rutas
 const menuRoutes = require('./routes/menu.routes');
@@ -47,8 +46,6 @@ app.use(session({
         sameSite: 'none'  
     }
 }));
-
-app.use(injectPermissions);
 
 // 2. SEGUNDO pasamos la sesión a las vistas (res.locals)
 app.use((req, res, next) => {
