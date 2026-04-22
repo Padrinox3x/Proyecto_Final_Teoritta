@@ -5,6 +5,12 @@
 <title>CRUD Sucursales</title>
 <link rel="stylesheet" href="/css/Principal_1.1.css">
 <link rel="stylesheet" href="/css/breadcrums.css"> 
+<style>
+    /* Estilos para asegurar que la paginación se vea y funcione correctamente */
+    .pagination { margin-top: 15px; display: flex; gap: 10px; align-items: center; justify-content: center; }
+    .pagination button { padding: 5px 12px; cursor: pointer; border: 1px solid #ccc; background: #fff; border-radius: 4px; }
+    .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
+</style>
 </head>
 
 <body>
@@ -36,11 +42,11 @@
 </table>
 
 <div class="pagination">
-    <button onclick="firstPage()">⏮</button>
-    <button onclick="prevPage()">◀</button>
+    <button id="btnFirst" onclick="firstPage()">⏮</button>
+    <button id="btnPrev" onclick="prevPage()">◀</button>
     <span id="pageInfo"></span>
-    <button onclick="nextPage()">▶</button>
-    <button onclick="lastPage()">⏭</button>
+    <button id="btnNext" onclick="nextPage()">▶</button>
+    <button id="btnLast" onclick="lastPage()">⏭</button>
 </div>
 
 <div class="modal" id="modal">
@@ -76,9 +82,10 @@ let page = 1;
 let rows = 10;
 let editIndex = null;
 
-// --- 🛡️ ESTADO GLOBAL DE PERMISOS ---
+// --- 🛡️ ESTADO GLOBAL DE PERMISOS CORREGIDO ---
 let permisosModulo = {
-    bitAgregar: 0, bitEditar: 0, bitConsulta: 0, bitEliminar: 0, bitDetalle: 0
+    bitAgregar: 0, bitEditar: 0, bitConsulta: 0, bitEliminar: 0, bitDetalle: 0,
+    bitAdministrador: 0 
 };
 
 // --- 🛡️ CARGAR PERMISOS (Principal_2_2) ---
@@ -87,11 +94,11 @@ async function cargarPermisos() {
         const res = await fetch('/api/permisosPerfil/mis-permisos?modulo=Principal_2_2');
         permisosModulo = await res.json();
         
-        // Ocultar botón "+" si no tiene bitAgregar
-        if (!permisosModulo.bitAgregar) {
-            const btn = document.getElementById('btnNuevo');
-            if(btn) btn.style.display = 'none';
-        }
+        // Pase Maestro para el botón Nuevo
+        const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
+        const btn = document.getElementById('btnNuevo');
+        if(btn) btn.style.display = puedeAgregar ? 'block' : 'none';
+
     } catch (error) {
         console.error("Error cargando permisos de Sucursales:", error);
     }
@@ -108,9 +115,9 @@ function totalPages(filteredLength){
 function getFilteredData(){
     let search = document.getElementById("search").value.toLowerCase();
     return data.filter(d =>
-        d.nombre.toLowerCase().includes(search) ||
-        d.direccion.toLowerCase().includes(search) ||
-        d.ciudad.toLowerCase().includes(search)
+        (d.nombre || "").toLowerCase().includes(search) ||
+        (d.direccion || "").toLowerCase().includes(search) ||
+        (d.ciudad || "").toLowerCase().includes(search)
     );
 }
 
@@ -118,23 +125,29 @@ function render(){
     let tbody = document.getElementById("tableBody");
     tbody.innerHTML = "";
     let filtered = getFilteredData();
+    let total = totalPages(filtered.length);
+
+    if(page > total) page = total || 1;
+
     let start = (page-1)*rows;
     let paginated = filtered.slice(start, start+rows);
 
-    paginated.forEach((d, i) => {
+    paginated.forEach((d) => {
         let realIndex = data.indexOf(d); 
         
-        // --- 🛡️ RENDERIZADO SEGURO DE BOTONES ---
+        // --- 🛡️ LÓGICA DE BOTONES CON PASE MAESTRO ---
+        const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
+        const puedeEliminar = permisosModulo.bitAdministrador || permisosModulo.bitEliminar;
+
         let botonesAccion = "";
-        if (permisosModulo.bitEditar) {
+        if (puedeEditar) {
             botonesAccion += `<button class="btn-edit" onclick="edit(${realIndex})">✏️</button> `;
         }
-        if (permisosModulo.bitEliminar) {
+        if (puedeEliminar) {
             botonesAccion += `<button class="btn-delete" onclick="del(${realIndex})">🗑</button>`;
         }
-        // Si no tiene ninguno de los dos permisos de acción
-        if (!permisosModulo.bitEditar && !permisosModulo.bitEliminar) {
-            botonesAccion = '<span style="color:gray; font-size:11px;">Lectura</span>';
+        if (!puedeEditar && !puedeEliminar) {
+            botonesAccion = '<span style="color:gray; font-size:11px;">Solo lectura</span>';
         }
 
         tbody.innerHTML += `
@@ -146,16 +159,19 @@ function render(){
         </tr>`;
     });
 
-    let total = totalPages(filtered.length);
-    if(page > total && total > 0) page = total;
+    // Actualizar paginación
     document.getElementById("pageInfo").innerText = `Página ${page} de ${total}`;
+    document.getElementById("btnPrev").disabled = (page === 1);
+    document.getElementById("btnFirst").disabled = (page === 1);
+    document.getElementById("btnNext").disabled = (page === total);
+    document.getElementById("btnLast").disabled = (page === total);
 }
 
-/* NAVEGACIÓN Y MODAL LOGIC (Se mantienen igual) */
-function nextPage(){ if(page < totalPages(getFilteredData().length)){ page++; render(); } }
-function prevPage(){ if(page > 1){ page--; render(); } }
+/* 🚩 FUNCIONES DE NAVEGACIÓN CORREGIDAS */
 function firstPage(){ page = 1; render(); }
 function lastPage(){ page = totalPages(getFilteredData().length); render(); }
+function nextPage(){ if(page < totalPages(getFilteredData().length)){ page++; render(); } }
+function prevPage(){ if(page > 1){ page--; render(); } }
 
 function openModal(){ document.getElementById("modal").style.display="flex"; }
 function closeModal(){ document.getElementById("modal").style.display="none"; clear(); }
@@ -170,9 +186,11 @@ function clear(){
 
 /* 🛡️ GUARDAR CON VALIDACIÓN DE PERMISOS */
 function save(){
-    // Bloqueo lógico por si el usuario activa el modal por consola
-    if(editIndex !== null && !permisosModulo.bitEditar) return alert("❌ No tienes permiso para editar.");
-    if(editIndex === null && !permisosModulo.bitAgregar) return alert("❌ No tienes permiso para registrar.");
+    const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
+    const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
+
+    if(editIndex !== null && !puedeEditar) return alert("❌ No tienes permiso para editar.");
+    if(editIndex === null && !puedeAgregar) return alert("❌ No tienes permiso para registrar.");
 
     const nombre = document.getElementById("nombre").value.trim();
     const direccion = document.getElementById("direccion").value.trim();
@@ -180,11 +198,6 @@ function save(){
 
     if(!nombre || !direccion || !ciudad){
         alert("❌ Todos los campos son obligatorios.");
-        return;
-    }
-
-    if(nombre.length < 3 || ciudad.length < 3){
-        alert("❌ El nombre y la ciudad deben tener al menos 3 caracteres.");
         return;
     }
 
@@ -216,8 +229,8 @@ function edit(i){
 }
 
 function del(i){
-    // Validación de bit antes de proceder
-    if(!permisosModulo.bitEliminar) return alert("❌ No tienes permiso para eliminar.");
+    const puedeEliminar = permisosModulo.bitAdministrador || permisosModulo.bitEliminar;
+    if(!puedeEliminar) return alert("❌ No tienes permiso para eliminar.");
     
     if(confirm("¿Seguro que deseas eliminar esta sucursal?")){
         data.splice(i,1);
@@ -226,10 +239,18 @@ function del(i){
     }
 }
 
+// Listeners para búsqueda y filas
+document.getElementById("search").addEventListener("input", () => { page = 1; render(); });
+document.getElementById("rows").addEventListener("change", (e) => { 
+    rows = parseInt(e.target.value); 
+    page = 1; 
+    render(); 
+});
+
 // --- 🛡️ INICIALIZACIÓN ---
 document.addEventListener("DOMContentLoaded", async () => {
-    await cargarPermisos(); // Primero consultamos los privilegios
-    render();               // Luego pintamos la tabla
+    await cargarPermisos(); 
+    render(); 
 });
 </script>
 
