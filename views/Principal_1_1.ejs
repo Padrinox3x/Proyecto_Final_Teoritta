@@ -2,139 +2,243 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>CRUD Productos</title>
+    <title>CRUD Empleados - Principal 2.2</title>
     <link rel="stylesheet" href="/css/Principal_1.1.css">
     <link rel="stylesheet" href="/css/breadcrums.css"> 
     <style>
-        /* Estilo rápido para los botones de paginación si no los tienes en tu CSS */
         .pagination { margin-top: 15px; display: flex; gap: 10px; align-items: center; justify-content: center; }
-        .pagination button { padding: 5px 10px; cursor: pointer; border: 1px solid #ccc; background: #fff; }
+        .pagination button { padding: 5px 12px; cursor: pointer; border: 1px solid #ccc; background: #fff; border-radius: 4px; }
         .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
+        /* Oculto por defecto para evitar parpadeo visual */
+        #btnNuevo { display: none; }
     </style>
 </head>
 
 <body>
-    <%- include('partials/breadcrumb') %>
- 
-   <div class="top-bar">
-        <input type="text" id="search" placeholder="Buscar producto o categoría...">
+
+<%- include('partials/breadcrumb') %>
+
+<div class="top-bar">
+    <input type="text" id="search" placeholder="Buscar empleado...">
+    
+    <select id="rows">
+        <option value="5">5</option>
+        <option value="10" selected>10</option>
+        <option value="15">15</option>
+    </select>
+
+    <button id="btnNuevo" class="btn-add" onclick="openModal()">+</button>
+</div>
+
+<table>
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Apellidos</th>
+            <th>Teléfono</th>
+            <th>Correo</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+</table>
+
+<div class="pagination">
+    <button id="btnFirst" onclick="firstPage()">⏮</button>
+    <button id="btnPrev" onclick="prevPage()">◀</button>
+    <span id="pageInfo"></span>
+    <button id="btnNext" onclick="nextPage()">▶</button>
+    <button id="btnLast" onclick="lastPage()">⏭</button>
+</div>
+
+<div class="modal" id="modal" style="display: none;">
+    <div class="modal-content">
+        <h3 id="modalTitle">Registrar Socios</h3>
         
-        <select id="rows">
-            <option value="5">5</option>
-            <option value="10" selected>10</option>
-            <option value="15">15</option>
-        </select>
-
-        <button id="btnNuevo" class="btn-add" onclick="openModal()">+</button>
+        <label>Nombre</label>
+        <input id="nombreProveedor" placeholder="Ej. Juan" maxlength="50" oninput="this.value = this.value.replace(/[0-9]/g, '')">
+        
+        <label>Apellidos</label>
+        <input id="ApellidosProveedor" placeholder="Ej. Pérez" maxlength="50" oninput="this.value = this.value.replace(/[0-9]/g, '')">
+        
+        <label>Correo Electrónico</label>
+        <input id="Correo" type="email" placeholder="correo@ejemplo.com">
+        
+        <label>Teléfono</label>
+        <input id="Telefono" placeholder="Solo números" maxlength="15" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+        
+        <div class="acciones-modal">
+            <button class="btn-save" onclick="save()">Guardar</button>
+            <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+        </div>
     </div>
+</div>
 
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Nombre</th>
-                <th>Categoría</th>
-                <th>Stock</th>
-                <th>Fecha</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody id="tableBody"></tbody>
-    </table>
+<script src="/js/breadcrums.js"></script> 
 
-    <div class="pagination">
-        <button id="btnPrev" onclick="changePage(-1)">Anterior</button>
-        <div id="pageInfo"></div>
-        <button id="btnNext" onclick="changePage(1)">Siguiente</button>
-    </div>
+<script>
+let data = JSON.parse(localStorage.getItem("empleados_sucursal")) || [];
+let page = 1;
+let rows = 10;
+let editIndex = null;
 
-    <script src="/js/breadcrums.js"></script> 
+// --- 🛡️ ESTADO GLOBAL DE PERMISOS ---
+let permisosModulo = {
+    bitAgregar: 0, bitEditar: 0, bitConsulta: 0, bitEliminar: 0, bitDetalle: 0,
+    bitAdministrador: 0 
+};
 
-    <script>
-    let data = JSON.parse(localStorage.getItem("productos")) || [];
-    let page = 1;
-    let rows = 10;
-    let editIndex = null;
+// --- 🛡️ CARGAR PERMISOS (Sincronizado) ---
+async function cargarPermisos() {
+    try {
+        const res = await fetch('/api/permisosPerfil/mis-permisos?modulo=Principal_1.1');
+        permisosModulo = await res.json();
+        
+        const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
+        const btn = document.getElementById('btnNuevo');
+        if(btn) btn.style.display = puedeAgregar ? 'block' : 'none';
+    } catch (error) {
+        console.error("Error cargando permisos:", error);
+    }
+}
 
-    // --- 🛡️ ESTADO GLOBAL DE PERMISOS ---
-    let permisosModulo = {
-        bitAgregar: 0, bitEditar: 0, bitConsulta: 0, bitEliminar: 0, bitDetalle: 0,
-        bitAdministrador: 0 
-    };
+function persist(){
+    localStorage.setItem("empleados_sucursal", JSON.stringify(data));
+}
 
-    async function cargarPermisos() {
-        try {
-            // IMPORTANTE: El nombre del módulo debe ser igual al de tu base de datos
-            const res = await fetch('/api/permisosPerfil/mis-permisos?modulo=Principal_1.1');
-            const result = await res.json();
-            
-            permisosModulo = result;
-            
-            // Actualización inmediata de botones globales
-            const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
-            const btnNuevo = document.getElementById('btnNuevo');
-            if (btnNuevo) btnNuevo.style.display = puedeAgregar ? 'block' : 'none';
+function getFilteredData(){
+    const search = (document.getElementById("search").value || "").toLowerCase();
+    return data.filter(d =>
+        (d.nombreProveedor || "").toLowerCase().includes(search) ||
+        (d.apellidosProveedor || "").toLowerCase().includes(search) ||
+        (d.correo || "").toLowerCase().includes(search) ||
+        (d.telefono || "").toString().includes(search)
+    );
+}
 
-        } catch (error) {
-            console.error("Error cargando permisos del módulo:", error);
+function render(){
+    const tbody = document.getElementById("tableBody");
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    const filtered = getFilteredData();
+    const total = Math.ceil(filtered.length / rows) || 1;
+
+    if(page > total) page = total || 1;
+
+    const start = (page - 1) * rows;
+    const paginated = filtered.slice(start, start + rows);
+
+    paginated.forEach((d) => {
+        const realIndex = data.indexOf(d); 
+        
+        const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
+        const puedeEliminar = permisosModulo.bitAdministrador || permisosModulo.bitEliminar;
+
+        let botonesAccion = "";
+        if (puedeEditar) {
+            botonesAccion += `<button class="btn-edit" onclick="edit(${realIndex})">✏️</button> `;
         }
-    }
-
-    function render() {
-        let tbody = document.getElementById("tableBody");
-        if (!tbody) return;
-        tbody.innerHTML = "";
-
-        let filtered = getFilteredData();
-        let total = Math.ceil(filtered.length / rows) || 1;
+        if (puedeEliminar) {
+            botonesAccion += `<button class="btn-delete" onclick="del(${realIndex})">🗑</button>`;
+        }
         
-        if(page > total) page = total;
+        if (!puedeEditar && !puedeEliminar) {
+            botonesAccion = '<span style="color:gray; font-size:11px;">Solo lectura</span>';
+        }
 
-        let start = (page - 1) * rows;
-        let paginated = filtered.slice(start, start + rows);
-
-        paginated.forEach((d) => {
-            let realIndex = data.indexOf(d);
-            
-            // Verificación de permisos por fila
-            const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
-            const puedeEliminar = permisosModulo.bitAdministrador || permisosModulo.bitEliminar;
-
-            let btnEdit = puedeEditar 
-                ? `<button class='btn-edit' onclick='edit(${realIndex})'>✏️</button>` 
-                : "";
-            
-            let btnDel = puedeEliminar 
-                ? `<button class='btn-delete' onclick='del(${realIndex})'>🗑</button>` 
-                : "";
-
-            if (!puedeEditar && !puedeEliminar) {
-                btnEdit = "<span style='color:gray;font-size:11px;'>Solo lectura</span>";
-            }
-
-            tbody.innerHTML += `<tr>
-                <td>${d.nombre}</td>
-                <td>${d.categoria}</td>
-                <td>${d.stock}</td>
-                <td>${d.fecha}</td>
-                <td>${btnEdit} ${btnDel}</td>
-            </tr>`;
-        });
-
-        document.getElementById("pageInfo").innerText = `Página ${page} de ${total}`;
-        document.getElementById("btnPrev").disabled = (page === 1);
-        document.getElementById("btnNext").disabled = (page === total);
-    }
-
-    // --- 🚀 INICIALIZACIÓN CRÍTICA ---
-    document.addEventListener("DOMContentLoaded", async () => {
-        // PASO 1: Esperar a que los permisos lleguen del servidor
-        await cargarPermisos();
-        
-        // PASO 2: Solo ahora que 'permisosModulo' tiene datos, dibujamos la tabla
-        render();
+        tbody.innerHTML += `
+        <tr>
+            <td>${d.nombreProveedor || ''}</td>
+            <td>${d.apellidosProveedor || ''}</td>
+            <td>${d.telefono || ''}</td>
+            <td>${d.correo || ''}</td>
+            <td>${botonesAccion}</td>
+        </tr>`;
     });
 
-    // ... Resto de tus funciones (save, del, edit, getFilteredData) se mantienen igual ...
+    document.getElementById("pageInfo").innerText = `Página ${page} de ${total}`;
+    document.getElementById("btnPrev").disabled = (page === 1);
+    document.getElementById("btnFirst").disabled = (page === 1);
+    document.getElementById("btnNext").disabled = (page === total);
+    document.getElementById("btnLast").disabled = (page === total);
+}
+
+// --- NAVEGACIÓN ---
+function firstPage() { page = 1; render(); }
+function prevPage() { if (page > 1) { page--; render(); } }
+function nextPage() { 
+    let total = Math.ceil(getFilteredData().length / rows) || 1;
+    if (page < total) { page++; render(); } 
+}
+function lastPage() { page = Math.ceil(getFilteredData().length / rows) || 1; render(); }
+
+// --- MODAL ---
+function openModal() { document.getElementById("modal").style.display = "flex"; }
+function closeModal() {
+    document.getElementById("modal").style.display = "none";
+    document.getElementById("nombreProveedor").value = "";
+    document.getElementById("ApellidosProveedor").value = "";
+    document.getElementById("Correo").value = "";
+    document.getElementById("Telefono").value = "";
+    document.getElementById("modalTitle").innerText = "Registrar Empleado";
+    editIndex = null;
+}
+
+// --- CRUD ---
+function save(){
+    const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
+    const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
+
+    if(editIndex !== null && !puedeEditar) return alert("❌ Sin permiso de edición.");
+    if(editIndex === null && !puedeAgregar) return alert("❌ Sin permiso de creación.");
+
+    const nombre = document.getElementById("nombreProveedor").value.trim();
+    const apellidos = document.getElementById("ApellidosProveedor").value.trim();
+    const correo = document.getElementById("Correo").value.trim();
+    const telefono = document.getElementById("Telefono").value.trim();
+
+    if(!nombre || !apellidos) return alert("❌ Nombre y Apellidos son obligatorios.");
+
+    const obj = { nombreProveedor: nombre, apellidosProveedor: apellidos, correo, telefono };
+
+    if(editIndex !== null) data[editIndex] = obj;
+    else data.push(obj);
+
+    persist();
+    closeModal();
+    render();
+}
+
+function edit(i){
+    editIndex = i;
+    const d = data[i];
+    document.getElementById("nombreProveedor").value = d.nombreProveedor;
+    document.getElementById("ApellidosProveedor").value = d.apellidosProveedor;
+    document.getElementById("Correo").value = d.correo;
+    document.getElementById("Telefono").value = d.telefono;
+    document.getElementById("modalTitle").innerText = "Editar Empleado";
+    openModal();
+}
+
+function del(i){
+    if(!(permisosModulo.bitAdministrador || permisosModulo.bitEliminar)) return alert("❌ Sin permiso.");
+    if(confirm("¿Seguro que deseas eliminar este registro?")){
+        data.splice(i,1);
+        persist();
+        render();
+    }
+}
+
+// Listeners
+document.getElementById("search").addEventListener("input", () => { page = 1; render(); });
+document.getElementById("rows").addEventListener("change", (e) => { rows = parseInt(e.target.value); page = 1; render(); });
+
+// --- 🚀 INICIALIZACIÓN ---
+document.addEventListener("DOMContentLoaded", async () => {
+    await cargarPermisos(); 
+    render(); 
+});
 </script>
 </body>
 </html>
