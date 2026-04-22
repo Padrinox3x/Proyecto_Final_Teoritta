@@ -115,47 +115,35 @@ app.get('/Principal_2_2', isAuthenticated, (req, res) => res.render('Principal_2
 ======================= */
 app.post('/api/usuario/upload-avatar', isAuthenticated, upload.single('imagen'), async (req, res) => {
     try {
-        // 1. Verificar si Multer recibió el archivo
         if (!req.file) {
-            console.log("❌ Multer no recibió ningún archivo en el campo 'imagen'");
             return res.status(400).json({ error: 'No se recibió ninguna imagen' });
         }
 
-        // 2. Verificar la sesión y el ID
-        // Cambia .idUsuario por .id o como sea que lo guardes en el login
-        const usuarioId = req.session.user.idUsuario || req.session.user.id; 
+        // Usamos el ID de la sesión
+        const usuarioId = req.session.user.idUsuario; 
         
-        if (!usuarioId) {
-            console.log("❌ No se encontró el ID del usuario en la sesión:", req.session.user);
-            return res.status(401).json({ error: 'Sesión inválida o ID no encontrado' });
-        }
-
-        console.log(`--- Iniciando subida para usuario ${usuarioId} ---`);
-
-        // 3. Convertir a Base64
+        // Convertir a Base64 para Cloudinary
         const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
 
-        // 4. Subir a Cloudinary (Usa tu config/cloudinary.js)
+        // Subir a Cloudinary
         const result = await cloudinary.uploader.upload(base64Image, {
             folder: 'perfiles_usuarios',
             public_id: `user_${usuarioId}`,
             overwrite: true
         });
 
-        console.log("✅ Subido a Cloudinary:", result.secure_url);
-
-        // 5. Actualizar en SQL Server
+        // ACTUALIZACIÓN SQL: Usando 'Modulo_Usuario' e 'idUsuario'
         const pool = await conectarDB();
         await pool.request()
-            .input('IdUsuario', sql.Int, usuarioId)
+            .input('idUsuarioParam', sql.Int, usuarioId)
             .input('FotoUrl', sql.NVarChar, result.secure_url)
             .query(`
-                UPDATE dbo.Usuarios 
+                UPDATE Modulo_Usuario 
                 SET FotoUrl = @FotoUrl 
-                WHERE IdUsuario = @IdUsuario
+                WHERE idUsuario = @idUsuarioParam
             `);
 
-        // 6. ACTUALIZAR SESIÓN (Importante para el breadcrumb)
+        // Actualizamos la sesión para que el cambio se vea reflejado
         req.session.user.FotoUrl = result.secure_url;
 
         res.json({ 
@@ -165,9 +153,8 @@ app.post('/api/usuario/upload-avatar', isAuthenticated, upload.single('imagen'),
         });
 
     } catch (error) {
-        // ESTO ES LO QUE DEBES REVISAR EN EL LOG DE RENDER SI FALLA
-        console.error('🔥 ERROR DETALLADO EN UPLOAD:', error);
-        res.status(500).json({ error: 'Error interno del servidor: ' + error.message });
+        console.error('Error detallado:', error);
+        res.status(500).json({ error: 'Error en el servidor: ' + error.message });
     }
 });
 
