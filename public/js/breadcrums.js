@@ -8,53 +8,38 @@ async function cargarPermisosMenu() {
         const res = await fetch('/api/permisosPerfil/mis-modulos'); 
         if (!res.ok) return;
 
-        // Convertimos todo a minúsculas para evitar errores de "Usuario" vs "usuario"
         const data = await res.json(); 
+
         const modulosPermitidos = data.map(m => m.toLowerCase().trim());
 
-        // 1. Buscamos todos los enlaces que están dentro de submenús
-        const linksSubmenu = document.querySelectorAll(".submenu li a");
+        const links = document.querySelectorAll(".submenu li a");
 
-        linksSubmenu.forEach(link => {
-            // Limpiamos el href: quitamos la "/" inicial, pasamos a minúsculas
-            let nombreModulo = link.getAttribute("href").replace("/", "").toLowerCase().trim();
-            
-            // Caso especial: si el href es "/permisos" pero en BD es "Permisos_Perfil" o "Permisos"
-            // Intentamos buscar si alguna de las palabras permitidas está contenida o viceversa
-            const tienePermiso = modulosPermitidos.some(m => 
-                m === nombreModulo || 
-                m.includes(nombreModulo) || 
-                nombreModulo.includes(m)
-            );
-            
-            const liPadre = link.parentElement;
-            if (!tienePermiso) {
-                liPadre.style.setProperty("display", "none", "important");
-            } else {
-                liPadre.style.display = 'block';
-            }
+        links.forEach(link => {
+            const modulo = link.dataset.modulo?.toLowerCase().trim();
+
+            const tienePermiso = modulosPermitidos.includes(modulo);
+
+            const li = link.parentElement;
+
+            li.style.display = tienePermiso ? "block" : "none";
         });
 
-        // 2. Ocultar el Padre (Seguridad, Principal 1, etc.) si todos sus hijos están ocultos
-        const itemsPrincipales = document.querySelectorAll(".menu > ul > li");
+        // Ocultar menú padre si no tiene hijos visibles
+        document.querySelectorAll(".menu > ul > li").forEach(menu => {
+            const submenu = menu.querySelector(".submenu");
 
-        itemsPrincipales.forEach(itemPrincipal => {
-            const submenu = itemPrincipal.querySelector(".submenu");
-            if (submenu) {
-                // Verificamos si queda algún <li> que NO tenga display: none
-                const hijosVisibles = Array.from(submenu.querySelectorAll("li"))
-                                           .filter(li => li.style.display !== 'none');
-                
-                if (hijosVisibles.length === 0) {
-                    itemPrincipal.style.setProperty("display", "none", "important");
-                } else {
-                    itemPrincipal.style.display = 'block';
-                }
+            if (!submenu) return;
+
+            const visibles = Array.from(submenu.children)
+                .filter(li => li.style.display !== "none");
+
+            if (visibles.length === 0) {
+                menu.style.display = "none";
             }
         });
 
     } catch (err) {
-        console.error("Error filtrando el menú por permisos:", err);
+        console.error("Error filtrando menú:", err);
     }
 }
 
