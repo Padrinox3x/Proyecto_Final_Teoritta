@@ -103,7 +103,7 @@ app.get('/principal', isAuthenticated, (req, res) => {
 });
 
 // CRUDS
-app.get('/menu', isAuthenticated, (req, res) => res.render('menu'));
+app.get('/menu', isAuthenticated, (req, res) => res.render('breadcrumb'));
 app.get('/modulo', isAuthenticated, (req, res) => res.render('modulo'));
 app.get('/perfil', isAuthenticated, (req, res) => res.render('perfil'));
 app.get('/usuario', isAuthenticated, (req, res) => res.render('usuario'));

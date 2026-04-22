@@ -3,6 +3,57 @@ const router = express.Router();
 const { sql, conectarDB } = require('../db');
 
 /* =======================
+   MENÚ SEGÚN PERMISOS
+======================= */
+router.get('/mis-menus', async (req, res) => {
+    try {
+        const user = req.session.user;
+
+        if (!user) {
+            return res.json([]);
+        }
+
+        const pool = await conectarDB();
+
+        // 🔥 SI ES ADMIN → TODOS LOS MENÚS
+        if (user.bitAdministrador == 1) {
+            const result = await pool.request().query(`
+                SELECT 
+                    m.idMenu,
+                    m.strNombreMenu,
+                    mo.strNombreModulo
+                FROM Menu m
+                INNER JOIN Modulo mo ON m.Modulo = mo.idModulo
+            `);
+
+            return res.json(result.recordset);
+        }
+
+        // 🔥 USUARIO NORMAL → SOLO SUS PERMISOS
+        const result = await pool.request()
+            .input('idUsuario', sql.Int, user.idUsuario)
+            .query(`
+                SELECT DISTINCT
+                    m.idMenu,
+                    m.strNombreMenu,
+                    mo.strNombreModulo
+                FROM Modulo_Usuario u
+                INNER JOIN Modulo_Perfil p ON u.Perfil = p.idPerfil
+                INNER JOIN Modulo_permisosPerfil pp ON p.idPerfil = pp.Perfil
+                INNER JOIN Modulo mo ON pp.Modulo = mo.idModulo
+                INNER JOIN Menu m ON m.Modulo = mo.idModulo
+                WHERE u.idUsuario = @idUsuario
+            `);
+
+        res.json(result.recordset);
+
+    } catch (error) {
+        console.error('🔥 Error mis-menus:', error);
+        res.status(500).json([]);
+    }
+});
+
+/* =======================
    LISTAR (CON JOIN)
 ======================= */
 router.get('/', async (req, res) => {

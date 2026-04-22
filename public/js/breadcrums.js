@@ -2,54 +2,35 @@
  * Lógica para el Menú de Navegación y Sidebar de Usuario
  */
 
-// 🔥 NORMALIZADOR GLOBAL (CLAVE DEL ÉXITO)
-function normalizar(texto) {
-    return (texto || "")
-        .toLowerCase()
-        .replace(/\./g, "_")   // 👈 convierte . → _
-        .trim();
-}
-
 // --- 🛡️ FUNCIÓN DE FILTRADO DE MENÚ ---
 async function cargarPermisosMenu() {
     try {
-        const res = await fetch('/api/permisosPerfil/mis-modulos'); 
+        const res = await fetch('/api/menu/mis-menus');
         if (!res.ok) return;
 
         const data = await res.json();
 
-        console.log("PERMISOS BACKEND:", data); // 🔥 DEBUG
+        console.log("MENUS BACKEND:", data); // DEBUG
 
-        // 🔥 Detectar ADMIN correctamente
-        const esAdmin = data.some(p => 
-            p.bitAdministrador == 1 || 
-            p.bitAdministrador === true
+        // 🔥 SOLO MENUS (NO MODULOS)
+        const menusPermitidos = data.map(m => 
+            (m.strNombreMenu || "").toLowerCase().trim()
         );
 
-        // 🔥 Normalizar módulos (soporta string u objeto)
-        const modulosPermitidos = data.map(m => {
-            if (typeof m === "string") return normalizar(m);
-            return normalizar(m.strNombreModulo);
-        });
+        console.log("MENUS PERMITIDOS:", menusPermitidos); // DEBUG
 
-        console.log("MODULOS NORMALIZADOS:", modulosPermitidos); // 🔥 DEBUG
+        // 🔥 USAMOS data-menu (NO data-modulo)
+        document.querySelectorAll(".submenu li").forEach(li => {
+            const menu = (li.dataset.menu || "").toLowerCase().trim();
 
-        // 🔥 Seleccionamos TODOS los items con data-modulo
-        const items = document.querySelectorAll(".submenu li");
+            if (!menu) return;
 
-        items.forEach(li => {
-            const moduloHTML = normalizar(li.dataset.modulo);
-
-            if (!moduloHTML) return;
-
-            const tienePermiso = esAdmin || modulosPermitidos.includes(moduloHTML);
-
-            console.log("CHECK:", moduloHTML, tienePermiso); // 🔥 DEBUG
+            const tienePermiso = menusPermitidos.includes(menu);
 
             li.style.display = tienePermiso ? "block" : "none";
         });
 
-        // 🔥 Ocultar menús padres sin hijos visibles
+        // 🔥 OCULTAR MENUS PADRE VACÍOS
         document.querySelectorAll(".menu > ul > li").forEach(menu => {
             const submenu = menu.querySelector(".submenu");
             if (!submenu) return;
