@@ -90,7 +90,7 @@ let permisosModulo = {
 // --- 🛡️ CARGAR PERMISOS DESDE EL SERVIDOR ---
 async function cargarPermisos() {
     try {
-        const res = await fetch('/api/permisosPerfil/mis-permisos?modulo=Principal_1.2');
+        const res = await fetch('/api/permisosPerfil/mis-permisos?modulo=Principal_2.2');
         permisosModulo = await res.json();
         
         // Pase Maestro para el botón Nuevo
