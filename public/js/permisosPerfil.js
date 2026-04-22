@@ -8,18 +8,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     // --- 2. ESTADO GLOBAL ---
     let permisos = [];
     let permisosModuloSeguridad = {
-        bitAgregar: 0, bitEditar: 0, bitConsulta: 0, bitEliminar: 0, bitDetalle: 0
+        bitAgregar: 0, bitEditar: 0, bitConsulta: 0, bitEliminar: 0, bitDetalle: 0,
+        bitAdministrador: 0 // Añadimos el bit de admin global
     };
 
     // --- 3. FUNCIONES DE PERMISOS DEL SISTEMA ---
     async function cargarPermisosDeUsuario() {
         try {
-            // Suponiendo que este módulo se llama "Seguridad" en tu tabla Modulo
+            // Asegúrate que el nombre 'Permisos' coincida con el INSERT que hiciste en la tabla Modulo
             const res = await fetch('/api/permisosPerfil/mis-permisos?modulo=Permisos');
-            permisosModuloSeguridad = await res.json();
+            const data = await res.json();
             
-            // Si no tiene permiso de editar/agregar, bloqueamos el botón de guardar global
-            if (!permisosModuloSeguridad.bitEditar && !permisosModuloSeguridad.bitAgregar) {
+            // Asignamos los datos recibidos
+            permisosModuloSeguridad = data;
+            
+            console.log("Mis permisos actuales:", permisosModuloSeguridad);
+
+            // LOGICA DE DESBLOQUEO:
+            // Si tiene bitEditar O es Administrador global, puede ver el botón de guardar
+            if (permisosModuloSeguridad.bitEditar || permisosModuloSeguridad.bitAdministrador) {
+                btnGuardar.style.display = 'block';
+            } else {
                 btnGuardar.style.display = 'none';
             }
         } catch (error) {
@@ -27,15 +36,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    /* ============================================================
-       CARGAR PERFILES (Para el dropdown)
-    ============================================================ */
     async function cargarPerfiles() {
         const res = await fetch('/api/perfil?limit=100&page=1');
         const result = await res.json();
-
         perfilSelect.innerHTML = '<option value="">Seleccione perfil</option>';
-
         result.data.forEach(p => {
             const option = document.createElement('option');
             option.value = p.idPerfil;
@@ -44,9 +48,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    /* ============================================================
-       CARGAR MATRIZ DE PERMISOS (Para el perfil seleccionado)
-    ============================================================ */
     async function cargarPermisos(idPerfil) {
         const res = await fetch(`/api/permisosPerfil/${idPerfil}`);
         permisos = await res.json();
@@ -56,8 +57,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         permisos.forEach(p => {
             const tr = document.createElement('tr');
 
-            // Los checkboxes se deshabilitan si el usuario actual no tiene permiso de editar la seguridad
-            const isDisabled = (!permisosModuloSeguridad.bitEditar) ? 'disabled' : '';
+            // --- 🛡️ CORRECCIÓN CRÍTICA AQUÍ ---
+            // Si permisosModuloSeguridad.bitEditar es 1 O bitAdministrador es 1, isDisabled será vacío (habilitado)
+            const canEdit = (permisosModuloSeguridad.bitEditar || permisosModuloSeguridad.bitAdministrador);
+            const isDisabled = !canEdit ? 'disabled' : '';
 
             tr.innerHTML = `
                 <td><strong>${p.strNombreModulo}</strong></td>
@@ -68,7 +71,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <td><input type="checkbox" ${p.bitDetalle ? 'checked' : ''} data-field="bitDetalle" ${isDisabled}></td>
             `;
 
-            // Escuchar cambios en los checkboxes para actualizar el array 'permisos'
             const checks = tr.querySelectorAll('input');
             checks.forEach(chk => {
                 chk.addEventListener('change', () => {
@@ -80,14 +82,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    /* ============================================================
-       GUARDAR CAMBIOS EN LA MATRIZ
-    ============================================================ */
     btnGuardar.addEventListener('click', async () => {
         const idPerfil = perfilSelect.value;
         if (!idPerfil) return alert('Selecciona un perfil primero');
-
-        // Confirmación extra por ser una acción crítica
         if (!confirm('¿Desea actualizar los privilegios para este perfil?')) return;
 
         try {
@@ -99,35 +96,25 @@ document.addEventListener('DOMContentLoaded', async () => {
                     permisos: permisos
                 })
             });
-
             const result = await res.json();
-
             if (result.ok) {
-                alert('✅ Matriz de permisos actualizada correctamente');
-                // Opcional: Recargar para asegurar sincronía
+                alert('✅ Matriz de permisos actualizada');
                 cargarPermisos(idPerfil);
             } else {
-                alert('❌ Error al guardar: ' + (result.error || 'Desconocido'));
+                alert('❌ Error: ' + (result.error || 'Desconocido'));
             }
         } catch (error) {
-            console.error('Error al guardar permisos:', error);
-            alert('❌ Error de conexión con el servidor');
+            alert('❌ Error de conexión');
         }
     });
 
-    /* ============================================================
-       EVENTOS
-    ============================================================ */
     perfilSelect.addEventListener('change', () => {
         const id = perfilSelect.value;
-        if (id) {
-            cargarPermisos(id);
-        } else {
-            tabla.innerHTML = '';
-        }
+        if (id) cargarPermisos(id);
+        else tabla.innerHTML = '';
     });
 
     // --- INICIALIZACIÓN ---
-    await cargarPermisosDeUsuario(); // Primero saber quién es el usuario actual
-    cargarPerfiles();                // Luego cargar la lista de perfiles
+    await cargarPermisosDeUsuario(); 
+    cargarPerfiles();
 });
