@@ -15,7 +15,7 @@ router.get('/mis-menus', async (req, res) => {
 
         const pool = await conectarDB();
 
-        // 🔥 SI ES ADMIN → TODOS LOS MENÚS
+        // 🔥 ADMIN → TODO
         if (user.bitAdministrador == 1) {
             const result = await pool.request().query(`
                 SELECT 
@@ -29,7 +29,7 @@ router.get('/mis-menus', async (req, res) => {
             return res.json(result.recordset);
         }
 
-        // 🔥 USUARIO NORMAL → SOLO SUS PERMISOS
+        // 🔥 SOLO SI TIENE PERMISOS ACTIVOS
         const result = await pool.request()
             .input('idUsuario', sql.Int, user.idUsuario)
             .query(`
@@ -39,7 +39,15 @@ router.get('/mis-menus', async (req, res) => {
                     mo.strNombreModulo
                 FROM Modulo_Usuario u
                 INNER JOIN Modulo_Perfil p ON u.Perfil = p.idPerfil
-                INNER JOIN Modulo_permisosPerfil pp ON p.idPerfil = pp.Perfil
+                INNER JOIN Modulo_permisosPerfil pp 
+                    ON p.idPerfil = pp.Perfil
+                    AND (
+                        pp.bitConsulta = 1 OR
+                        pp.bitAgregar = 1 OR
+                        pp.bitEditar = 1 OR
+                        pp.bitEliminar = 1 OR
+                        pp.bitDetalle = 1
+                    )
                 INNER JOIN Modulo mo ON pp.Modulo = mo.idModulo
                 INNER JOIN Menu m ON m.Modulo = mo.idModulo
                 WHERE u.idUsuario = @idUsuario
