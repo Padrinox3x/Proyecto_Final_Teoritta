@@ -31,6 +31,12 @@ app.use(express.static('public'));
 
 app.set('trust proxy', 1);
 
+app.use((req, res, next) => {
+    // res.locals es un objeto que EJS puede ver automáticamente
+    res.locals.user = req.session.user || null;
+    next();
+});
+
 app.use(session({
     secret: 'sistema_seguro_123',
     resave: false,

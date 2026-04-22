@@ -1,194 +1,228 @@
-/* Reset */
-*{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:Arial, Helvetica, sans-serif;
+/* Reset básico */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Barra de menú */
-.menu{
-    background:#333;
+/* --- Barra de menú --- */
+.menu {
+    background: #333;
+    width: 100%;
 }
 
-/* Menú principal */
-.menu > ul{
-    list-style:none;
-    display:flex;
+/* Contenedor principal de la lista */
+.menu > ul {
+    list-style: none;
+    display: flex;
+    align-items: center; /* Centra verticalmente los items */
 }
 
 /* Items principales */
-.menu > ul > li{
-    position:relative;
+.menu > ul > li {
+    position: relative;
 }
 
-/* Links */
-.menu a{
-    display:block;
-    padding:15px 25px;
-    color:white;
-    text-decoration:none;
+/* Espaciador para empujar el perfil a la derecha */
+.spacer {
+    flex-grow: 1;
 }
 
-.menu a:hover{
-    background:#555;
+/* Links de navegación */
+.menu a {
+    display: block;
+    padding: 15px 20px;
+    color: white;
+    text-decoration: none;
+    transition: background 0.3s;
 }
 
-/* SUBMENUS */
-.submenu{
-    list-style:none;
-    position:absolute;
-    top:100%;
-    left:0;
-    width:200px;
-    background:#444;
-
-    /* IMPORTANTE */
-    display:none;
+.menu a:hover {
+    background: #555;
 }
 
-/* Items del submenu */
-.submenu li{
-    width:100%;
-}
-
-.submenu li a{
-    padding:12px;
-    border-bottom:1px solid #555;
-}
-
-.submenu li a:hover{
-    background:#666;
-}
-
-/* clase que activa submenu */
-.submenu.activo{
-    display:block;
-}
-
-/* Contenedor en el breadcrumb */
-.user-menu-container {
+/* --- SUBMENUS --- */
+.submenu {
+    list-style: none;
     position: absolute;
-    right: 20px;
-    top: 50%;
-    transform: translateY(-50%);
+    top: 100%;
+    left: 0;
+    width: 200px;
+    background: #444;
+    display: none; /* Escondido por defecto */
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
 }
 
-.user-circle {
+.submenu li {
+    width: 100%;
+}
+
+.submenu li a {
+    padding: 12px;
+    border-bottom: 1px solid #555;
+}
+
+.submenu li a:hover {
+    background: #666;
+}
+
+/* Clase que activa el submenu via JS */
+.submenu.activo {
+    display: block;
+}
+
+/* --- ÁREA DEL AVATAR (Círculo) --- */
+.user-profile-item {
+    padding: 0 20px;
+}
+
+.avatar-circle {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: #e2e8f0;
-    cursor: pointer;
     overflow: hidden;
+    cursor: pointer;
     border: 2px solid #3b82f6;
     transition: transform 0.2s;
+    background: #eee;
 }
 
-.user-circle:hover { transform: scale(1.1); }
-.user-circle img { width: 100%; height: 100%; object-fit: cover; }
+.avatar-circle:hover {
+    transform: scale(1.1);
+}
 
-/* Menú Lateral (Drawer) */
-.user-drawer {
+.avatar-circle img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* --- SIDEBAR LATERAL (PERFIL) --- */
+.user-sidebar {
     position: fixed;
     top: 0;
-    right: -320px; /* Escondido por defecto */
+    right: -320px; /* Escondido */
     width: 300px;
     height: 100%;
     background: white;
-    box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+    box-shadow: -5px 0 15px rgba(0,0,0,0.2);
     z-index: 10000;
     transition: right 0.3s ease;
-    padding: 20px;
+    padding: 25px;
     display: flex;
     flex-direction: column;
 }
 
-.user-drawer.open { right: 0; }
+.user-sidebar.open {
+    right: 0;
+}
 
-.drawer-header {
+.sidebar-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 30px;
+    margin-bottom: 25px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
 }
 
-/* Área de Foto */
-.avatar-upload {
-    text-align: center;
-    margin-bottom: 20px;
+#close-sidebar {
+    background: none;
+    border: none;
+    font-size: 24px;
+    cursor: pointer;
+    color: #666;
 }
 
-.avatar-preview {
-    width: 100px;
-    height: 100px;
+/* Contenido del Perfil */
+.profile-main-photo {
+    width: 110px;
+    height: 110px;
+    margin: 0 auto 20px;
     border-radius: 50%;
-    margin: 0 auto 10px;
     overflow: hidden;
     border: 3px solid #f1f5f9;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
 }
 
-.avatar-preview img { width: 100%; height: 100%; object-fit: cover; }
-
-.btn-upload {
-    background: #3b82f6;
-    color: white;
-    padding: 6px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 12px;
-}
-
-.btn-logout {
-    background: #ef4444;
-    color: white;
+.profile-main-photo img {
     width: 100%;
-    padding: 12px;
-    margin-top: auto;
+    height: 100%;
+    object-fit: cover;
+}
+
+.profile-info {
+    margin-bottom: 25px;
+}
+
+.profile-info p {
+    font-size: 14px;
+    color: #444;
+    padding: 8px 0;
+    border-bottom: 1px solid #f9f9f9;
+}
+
+.profile-info strong {
+    color: #333;
+    display: inline-block;
+    width: 70px;
+}
+
+/* Sección de Carga */
+.upload-section {
+    text-align: center;
+    background: #f8fafc;
+    padding: 15px;
     border-radius: 8px;
 }
 
-/* El círculo del avatar */
-.avatar-circle {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  overflow: hidden;
-  cursor: pointer;
-  border: 2px solid #ddd;
+.upload-text {
+    font-size: 13px;
+    margin-bottom: 10px;
+    color: #64748b;
 }
 
-.avatar-circle img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.btn-select, .btn-primary {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    border: none;
+    margin-bottom: 8px;
+    transition: opacity 0.2s;
 }
 
-/* Sidebar lateral derecho */
-.user-sidebar {
-  position: fixed;
-  top: 0;
-  right: -300px; /* Oculto */
-  width: 300px;
-  height: 100%;
-  background: #fff;
-  box-shadow: -2px 0 5px rgba(0,0,0,0.2);
-  transition: right 0.3s ease;
-  z-index: 1000;
-  padding: 20px;
+.btn-select {
+    background: #e2e8f0;
+    color: #475569;
 }
 
-.user-sidebar.open {
-  right: 0;
+.btn-primary {
+    background: #3b82f6;
+    color: white;
 }
 
+.btn-select:hover, .btn-primary:hover {
+    opacity: 0.9;
+}
+
+/* Botón de Logout */
 .btn-logout {
-  display: block;
-  margin-top: 20px;
-  color: white;
-  background: #dc3545;
-  text-align: center;
-  padding: 10px;
-  text-decoration: none;
-  border-radius: 5px;
+    display: block;
+    margin-top: auto;
+    background: #ef4444;
+    color: white;
+    text-align: center;
+    padding: 12px;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: bold;
+    transition: background 0.2s;
+}
+
+.btn-logout:hover {
+    background: #dc2626;
 }
