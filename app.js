@@ -9,7 +9,7 @@ const { sql, conectarDB } = require('./db');
 // 🔐 Middleware de autenticación
 const isAuthenticated = require('./middlewares/auth');
 
-// 🔥 Rutas (solo las que SÍ existen)
+// 🔥 Rutas
 const menuRoutes = require('./routes/menu.routes');
 const moduloRoutes = require('./routes/modulo.routes');
 const perfilRoutes = require('./routes/perfil.routes');
@@ -21,22 +21,17 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
+
 /* =======================
-   MIDDLEWARES
+    MIDDLEWARES
 ======================= */
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static('public'));
 
-
 app.set('trust proxy', 1);
 
-app.use((req, res, next) => {
-    // res.locals es un objeto que EJS puede ver automáticamente
-    res.locals.user = req.session.user || null;
-    next();
-});
-
+// 1. PRIMERO inicializamos la sesión
 app.use(session({
     secret: 'sistema_seguro_123',
     resave: false,
@@ -49,12 +44,19 @@ app.use(session({
     }
 }));
 
+// 2. SEGUNDO pasamos la sesión a las vistas (res.locals)
+app.use((req, res, next) => {
+    // Ahora req.session ya existe, no dará error
+    res.locals.user = (req.session && req.session.user) ? req.session.user : null;
+    next();
+});
+
 // 📄 VISTAS
 app.set('view engine', 'ejs');
 app.set('views', __dirname + '/views');
 
 /* =======================
-   CONEXIÓN DB
+    CONEXIÓN DB
 ======================= */
 (async () => {
     try {
@@ -67,7 +69,7 @@ app.set('views', __dirname + '/views');
 })();
 
 /* =======================
-   API ROUTES
+    API ROUTES
 ======================= */
 app.use('/api/menu', menuRoutes);
 app.use('/api/modulo', moduloRoutes);
@@ -79,105 +81,55 @@ app.use('/api/permisosPerfil', permisosRoutes);
 app.use('/auth', authRoutes);
 
 /* =======================
-   VISTAS
+    VISTAS (Rutas de Renderizado)
 ======================= */
 
-// 🔑 LOGIN
 app.get('/login', (req, res) => {
     res.render('login');
 });
 
-// 🔒 LOGOUT
 app.get('/logout', (req, res) => {
     req.session.destroy(() => {
         res.redirect('/login');
     });
 });
 
-// 🏠 DASHBOARD
 app.get('/breadcrums', isAuthenticated, (req, res) => {
     res.sendFile(__dirname + '/public/breadcrums.html');
 });
 
-// 📦 CRUDS (solo los que tienes)
-app.get('/menu', isAuthenticated, (req, res) => {
-    res.render('menu');
-});
+// CRUDS
+app.get('/menu', isAuthenticated, (req, res) => res.render('menu'));
+app.get('/modulo', isAuthenticated, (req, res) => res.render('modulo'));
+app.get('/perfil', isAuthenticated, (req, res) => res.render('perfil'));
+app.get('/usuario', isAuthenticated, (req, res) => res.render('usuario'));
+app.get('/permisos', isAuthenticated, (req, res) => res.render('permisosPerfil'));
 
-app.get('/modulo', isAuthenticated, (req, res) => {
-    res.render('modulo');
-});
-
-app.get('/perfil', isAuthenticated, (req, res) => {
-    res.render('perfil');
-});
-
-app.get('/usuario', isAuthenticated, (req, res) => {
-    res.render('usuario');
-});
-
-app.get('/permisos', isAuthenticated, (req, res) => {
-    res.render('permisosPerfil');
-});
-
-app.get('/Principal_1_1', isAuthenticated, (req, res) => {
-    res.render('Principal_1_1');
-});
-
-app.get('/Principal_1_2', isAuthenticated, (req, res) => {
-    res.render('Principal_1_2');
-});
-
-app.get('/Principal_2_1', isAuthenticated, (req, res) => {
-    res.render('Principal_2_1');
-});
-
-app.get('/Principal_2_2', isAuthenticated, (req, res) => {
-    res.render('Principal_2_2');
-});
+app.get('/Principal_1_1', isAuthenticated, (req, res) => res.render('Principal_1_1'));
+app.get('/Principal_1_2', isAuthenticated, (req, res) => res.render('Principal_1_2'));
+app.get('/Principal_2_1', isAuthenticated, (req, res) => res.render('Principal_2_1'));
+app.get('/Principal_2_2', isAuthenticated, (req, res) => res.render('Principal_2_2'));
 
 /* =======================
-   HOME
+    GESTIÓN DE AVATAR (Cloudinary)
 ======================= */
-app.get('/', (req, res) => {
-    if (!req.session.user) {
-        return res.redirect('/login');
-    }
-    res.redirect('/dashboard');
-});
-
-/* =======================
-   TEST DB
-======================= */
-app.get('/test-db', async (req, res) => {
-    try {
-        const result = await sql.query`SELECT GETDATE() AS Fecha`;
-        res.json(result.recordset);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
-});
-
 app.post('/api/usuario/upload-avatar', isAuthenticated, upload.single('imagen'), async (req, res) => {
     try {
         if (!req.file) {
             return res.status(400).json({ error: '❌ No se recibió ninguna imagen' });
         }
 
-        // Usamos el ID del usuario de la sesión (ajusta 'idUsuario' según tu objeto session)
         const usuarioId = req.session.user.idUsuario; 
-
-        // Convertir buffer a base64
         const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
 
-        // Subir a Cloudinary usando TU módulo importado
+        // Subida a Cloudinary
         const result = await cloudinary.uploader.upload(base64Image, {
             folder: 'perfiles_usuarios',
             public_id: `user_${usuarioId}`,
             overwrite: true
         });
 
-        // Actualizar en SQL Server
+        // Actualizar SQL Server
         const pool = await conectarDB();
         await pool.request()
             .input('IdUsuario', sql.Int, usuarioId)
@@ -188,7 +140,7 @@ app.post('/api/usuario/upload-avatar', isAuthenticated, upload.single('imagen'),
                 WHERE IdUsuario = @IdUsuario
             `);
 
-        // Actualizamos la sesión para que el avatar cambie en toda la app sin refrescar
+        // Sincronizar sesión
         req.session.user.FotoUrl = result.secure_url;
 
         res.json({ 
@@ -204,22 +156,36 @@ app.post('/api/usuario/upload-avatar', isAuthenticated, upload.single('imagen'),
 });
 
 /* =======================
-   404
+    HOME & TEST
+======================= */
+app.get('/', (req, res) => {
+    if (!req.session.user) return res.redirect('/login');
+    res.redirect('/breadcrums'); // O tu dashboard principal
+});
+
+app.get('/test-db', async (req, res) => {
+    try {
+        const result = await sql.query`SELECT GETDATE() AS Fecha`;
+        res.json(result.recordset);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
+/* =======================
+    MANEJO DE ERRORES
 ======================= */
 app.use((req, res) => {
     res.status(404).sendFile(__dirname + '/public/404.html');
 });
 
-/* =======================
-   500
-======================= */
 app.use((err, req, res, next) => {
     console.error('💥 Error:', err);
     res.status(500).sendFile(__dirname + '/public/500.html');
 });
 
 /* =======================
-   SERVER
+    SERVER
 ======================= */
 app.listen(PORT, () => {
     console.log(`🚀 Servidor corriendo en puerto ${PORT}`);
