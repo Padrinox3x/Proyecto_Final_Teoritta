@@ -1,6 +1,44 @@
 /**
  * Lógica para el Menú de Navegación y Sidebar de Usuario
  */
+
+// --- 🛡️ FUNCIÓN NUEVA: FILTRAR MENÚ POR PERMISOS ---
+async function cargarPermisosMenu() {
+    try {
+        // Consultamos un endpoint que nos devuelva la lista de módulos permitidos
+        // Si no tienes este endpoint, deberás crearlo en tu backend
+        const res = await fetch('/api/permisosPerfil/mis-modulos'); 
+        if (!res.ok) return;
+
+        const modulosPermitidos = await res.json(); 
+        // Ejemplo esperado: ["Usuario", "Principal_2.1"]
+
+        // Buscamos todos los enlaces del menú
+        const itemsMenu = document.querySelectorAll(".menu ul li a, .submenu li a");
+
+        itemsMenu.forEach(item => {
+            const textoEnlace = item.innerText.trim();
+            
+            // Si es un enlace de módulo (y no un disparador de submenú como "Seguridad")
+            // Verificamos si el nombre del módulo está en la lista de permitidos
+            const esModulo = textoEnlace.includes("Principal") || textoEnlace === "Usuario" || textoEnlace === "Perfil";
+            
+            if (esModulo) {
+                const tienePermiso = modulosPermitidos.includes(textoEnlace);
+                // Ocultamos el <li> completo que contiene el enlace si no tiene permiso
+                if (!tienePermiso) {
+                    item.parentElement.style.display = 'none';
+                } else {
+                    item.parentElement.style.display = 'block';
+                }
+            }
+        });
+
+    } catch (err) {
+        console.error("Error filtrando el menú por permisos:", err);
+    }
+}
+
 async function cargarDatosUsuario() {
     try {
         const res = await fetch('/api/usuario/me');
@@ -9,8 +47,6 @@ async function cargarDatosUsuario() {
         const user = await res.json();
 
         if (user) {
-            // 1. Actualizar Textos en el Sidebar
-            // Usamos querySelector para buscar por los labels de tu perfil
             const infoPs = document.querySelectorAll('.profile-info p span');
             if (infoPs.length >= 4) {
                 infoPs[0].innerText = user.strNombreUsuario || '---';
@@ -19,7 +55,6 @@ async function cargarDatosUsuario() {
                 infoPs[3].innerText = user.strCelular || 'No registrado';
             }
 
-            // 2. Actualizar Imágenes (Círculo Nav y Sidebar)
             const foto = user.FotoUrl || '/img/default-avatar.png';
             const navAvatar = document.getElementById('avatar-img');
             const sidebarAvatar = document.getElementById('sidebar-avatar-img');
@@ -33,7 +68,6 @@ async function cargarDatosUsuario() {
 }
 
 function inicializarMenu() {
-    // --- 1. LÓGICA DE SUBMENÚS ---
     const menus = document.querySelectorAll(".menu > ul > li > a");
 
     menus.forEach(menu => {
@@ -49,7 +83,6 @@ function inicializarMenu() {
         });
     });
 
-    // --- 2. LÓGICA DEL SIDEBAR ---
     const avatar = document.getElementById('user-avatar');
     const sidebar = document.getElementById('user-sidebar');
     const closeSidebar = document.getElementById('close-sidebar');
@@ -58,7 +91,7 @@ function inicializarMenu() {
         avatar.addEventListener('click', (e) => {
             e.stopPropagation();
             sidebar.classList.add('open');
-            cargarDatosUsuario(); // Refrescar datos al abrir
+            cargarDatosUsuario(); 
         });
 
         if (closeSidebar) {
@@ -68,7 +101,6 @@ function inicializarMenu() {
         }
     }
 
-    // Cerrar al hacer clic fuera
     document.addEventListener("click", function(e) {
         if (!e.target.closest(".menu")) {
             document.querySelectorAll(".submenu").forEach(sub => sub.classList.remove("activo"));
@@ -78,7 +110,6 @@ function inicializarMenu() {
         }
     });
 
-    // --- 3. SUBIDA DE IMAGEN AL BACKEND ---
     const btnUpload = document.getElementById('btn-upload');
     const imageInput = document.getElementById('image-input');
 
@@ -88,7 +119,7 @@ function inicializarMenu() {
             if (!file) return alert("Por favor, selecciona una imagen primero.");
 
             const formData = new FormData();
-            formData.append('imagen', file); // 'imagen' debe coincidir con upload.single('imagen')
+            formData.append('imagen', file);
 
             btnUpload.innerText = "Subiendo...";
             btnUpload.disabled = true;
@@ -98,19 +129,17 @@ function inicializarMenu() {
                     method: 'POST',
                     body: formData
                 });
-
                 const data = await res.json();
 
                 if (data.success) {
                     alert("¡Imagen actualizada!");
-                    await cargarDatosUsuario(); // Refrescar fotos y datos
-                    imageInput.value = ""; // Limpiar el input
+                    await cargarDatosUsuario();
+                    imageInput.value = "";
                 } else {
                     alert("Error: " + (data.error || "No se pudo subir"));
                 }
             } catch (err) {
                 console.error("Error al subir:", err);
-                alert("Error de conexión al subir la imagen.");
             } finally {
                 btnUpload.innerText = "Actualizar Foto";
                 btnUpload.disabled = false;
@@ -119,8 +148,9 @@ function inicializarMenu() {
     }
 }
 
-// Inicializar y cargar datos iniciales
+// --- 🚀 INICIALIZACIÓN ---
 document.addEventListener("DOMContentLoaded", () => {
     inicializarMenu();
-    cargarDatosUsuario(); // Carga la foto pequeña del nav al iniciar
+    cargarDatosUsuario();
+    cargarPermisosMenu(); // Llamamos a la nueva función de filtrado
 });
