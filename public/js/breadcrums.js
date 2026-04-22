@@ -1,45 +1,66 @@
 /**
  * Lógica para el Menú de Navegación y Sidebar de Usuario
  */
+async function cargarDatosUsuario() {
+    try {
+        const res = await fetch('/api/usuario/me');
+        if (!res.ok) throw new Error("No se pudo obtener la sesión");
+        
+        const user = await res.json();
+
+        if (user) {
+            // 1. Actualizar Textos en el Sidebar
+            // Usamos querySelector para buscar por los labels de tu perfil
+            const infoPs = document.querySelectorAll('.profile-info p span');
+            if (infoPs.length >= 4) {
+                infoPs[0].innerText = user.strNombreUsuario || '---';
+                infoPs[1].innerText = user.PerfilNombre || 'Usuario';
+                infoPs[2].innerText = user.strCorreo || '---';
+                infoPs[3].innerText = user.strCelular || 'No registrado';
+            }
+
+            // 2. Actualizar Imágenes (Círculo Nav y Sidebar)
+            const foto = user.FotoUrl || '/img/default-avatar.png';
+            const navAvatar = document.getElementById('avatar-img');
+            const sidebarAvatar = document.getElementById('sidebar-avatar-img');
+
+            if (navAvatar) navAvatar.src = foto;
+            if (sidebarAvatar) sidebarAvatar.src = foto;
+        }
+    } catch (err) {
+        console.error("Error cargando datos del usuario:", err);
+    }
+}
+
 function inicializarMenu() {
-    // 1. LÓGICA DE SUBMENÚS (Tu código original optimizado)
+    // --- 1. LÓGICA DE SUBMENÚS ---
     const menus = document.querySelectorAll(".menu > ul > li > a");
 
     menus.forEach(menu => {
         menu.addEventListener("click", function(e) {
             const submenu = this.nextElementSibling;
-
-            // Si no tiene submenú (como el caso del avatar o links directos), navegar normal
-            if (!submenu || !submenu.classList.contains("submenu")) {
-                return; 
-            }
+            if (!submenu || !submenu.classList.contains("submenu")) return;
 
             e.preventDefault();
-
-            // Cerrar otros submenús abiertos
             document.querySelectorAll(".submenu").forEach(sub => {
-                if (sub !== submenu) {
-                    sub.classList.remove("activo");
-                }
+                if (sub !== submenu) sub.classList.remove("activo");
             });
-
             submenu.classList.toggle("activo");
         });
     });
 
-    // 2. LÓGICA DEL SIDEBAR (Perfil de Usuario)
+    // --- 2. LÓGICA DEL SIDEBAR ---
     const avatar = document.getElementById('user-avatar');
     const sidebar = document.getElementById('user-sidebar');
     const closeSidebar = document.getElementById('close-sidebar');
 
     if (avatar && sidebar) {
-        // Abrir Sidebar al dar clic en el círculo
         avatar.addEventListener('click', (e) => {
-            e.stopPropagation(); // Evita que el evento llegue al document
+            e.stopPropagation();
             sidebar.classList.add('open');
+            cargarDatosUsuario(); // Refrescar datos al abrir
         });
 
-        // Cerrar Sidebar con la "X"
         if (closeSidebar) {
             closeSidebar.addEventListener('click', () => {
                 sidebar.classList.remove('open');
@@ -47,84 +68,59 @@ function inicializarMenu() {
         }
     }
 
-    // 3. CERRAR TODO AL HACER CLIC FUERA
+    // Cerrar al hacer clic fuera
     document.addEventListener("click", function(e) {
-        // Cerrar submenús si se hace clic fuera del nav
         if (!e.target.closest(".menu")) {
-            document.querySelectorAll(".submenu").forEach(sub => {
-                sub.classList.remove("activo");
-            });
+            document.querySelectorAll(".submenu").forEach(sub => sub.classList.remove("activo"));
         }
-
-        // Cerrar sidebar si se hace clic fuera de él y no es el avatar
         if (sidebar && !sidebar.contains(e.target) && !avatar.contains(e.target)) {
             sidebar.classList.remove('open');
         }
     });
 
-    // 4. GESTIÓN DE CLOUDINARY (Carga de Imagen)
+    // --- 3. SUBIDA DE IMAGEN AL BACKEND ---
     const btnUpload = document.getElementById('btn-upload');
     const imageInput = document.getElementById('image-input');
-    const avatarImg = document.getElementById('avatar-img');
 
     if (btnUpload && imageInput) {
         btnUpload.addEventListener('click', async () => {
             const file = imageInput.files[0];
             if (!file) return alert("Por favor, selecciona una imagen primero.");
 
-            // Mostrar estado de carga (opcional)
+            const formData = new FormData();
+            formData.append('imagen', file); // 'imagen' debe coincidir con upload.single('imagen')
+
             btnUpload.innerText = "Subiendo...";
             btnUpload.disabled = true;
 
-            const formData = new FormData();
-            formData.append('file', file);
-            // IMPORTANTE: Cambia 'tu_preset' y 'tu_user' por tus credenciales de Cloudinary
-            formData.append('upload_preset', 'tu_preset_aqui'); 
-
             try {
-                const res = await fetch('https://api.cloudinary.com/v1_1/tu_user_aqui/image/upload', {
+                const res = await fetch('/api/usuario/upload-avatar', {
                     method: 'POST',
                     body: formData
                 });
 
                 const data = await res.json();
 
-                if (data.secure_url) {
-                    // 1. Actualizar la vista previa inmediatamente
-                    avatarImg.src = data.secure_url;
-                    
-                    // 2. ENVIAR AL BACKEND (Ejemplo de cómo guardarlo en tu SQL Server)
-                    await actualizarFotoEnBaseDeDatos(data.secure_url);
-
-                    alert("¡Imagen actualizada con éxito!");
+                if (data.success) {
+                    alert("¡Imagen actualizada!");
+                    await cargarDatosUsuario(); // Refrescar fotos y datos
+                    imageInput.value = ""; // Limpiar el input
                 } else {
-                    throw new Error("No se recibió la URL de la imagen");
+                    alert("Error: " + (data.error || "No se pudo subir"));
                 }
             } catch (err) {
-                console.error("Error en Cloudinary:", err);
-                alert("Error al subir la imagen.");
+                console.error("Error al subir:", err);
+                alert("Error de conexión al subir la imagen.");
             } finally {
-                btnUpload.innerText = "Actualizar Imagen";
+                btnUpload.innerText = "Actualizar Foto";
                 btnUpload.disabled = false;
             }
         });
     }
 }
 
-/**
- * Función auxiliar para persistir la URL en tu servidor Node/Express
- */
-async function actualizarFotoEnBaseDeDatos(urlImagen) {
-    try {
-        await fetch('/api/usuario/update-avatar', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ url: urlImagen })
-        });
-    } catch (error) {
-        console.error("Error guardando en BD:", error);
-    }
-}
-
-// Inicializar cuando el DOM esté listo
-document.addEventListener("DOMContentLoaded", inicializarMenu);
+// Inicializar y cargar datos iniciales
+document.addEventListener("DOMContentLoaded", () => {
+    inicializarMenu();
+    cargarDatosUsuario(); // Carga la foto pequeña del nav al iniciar
+});
