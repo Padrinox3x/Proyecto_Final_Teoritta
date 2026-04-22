@@ -32,8 +32,6 @@ const upload = multer({ storage });
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static('public'));
-app.use(injectPermissions);
-
 
 app.set('trust proxy', 1);
 
@@ -49,6 +47,8 @@ app.use(session({
         sameSite: 'none'  
     }
 }));
+
+app.use(injectPermissions);
 
 // 2. SEGUNDO pasamos la sesión a las vistas (res.locals)
 app.use((req, res, next) => {
