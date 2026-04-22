@@ -93,47 +93,38 @@ let rows = 10;
 let editIndex = null;
 
 // =========================
-// PERMISOS
+// PERMISOS (BASE SEGURA)
 // =========================
 let permisosModulo = {
     bitAgregar: 0,
     bitEditar: 0,
-    bitConsulta: 1, // 👈 SIEMPRE mínimo lectura
+    bitConsulta: 1, // 👈 SIEMPRE permitir ver
     bitEliminar: 0,
     bitDetalle: 0,
     bitAdministrador: 0 
 };
 
 // =========================
-// CARGAR PERMISOS (ROBUSTO)
+// CARGAR PERMISOS
 // =========================
 async function cargarPermisos() {
     try {
         const res = await fetch('/api/permisosPerfil/mis-permisos?modulo=Principal_2.2');
 
-        if (!res.ok) {
-            console.warn("Sin permisos en BD → fallback lectura");
-        } else {
+        if (res.ok) {
             const result = await res.json();
             if (result) permisosModulo = result;
+        } else {
+            console.warn("Sin permisos en BD → modo lectura");
         }
 
     } catch (error) {
         console.error("Error permisos:", error);
     }
 
-    // 🔒 VALIDAR ACCESO
-    if (!(permisosModulo.bitAdministrador || permisosModulo.bitConsulta)) {
-        document.body.innerHTML = `
-            <div class="no-access">
-                <h2>⛔ Acceso denegado</h2>
-                <p>No tienes permisos para este módulo.</p>
-            </div>
-        `;
-        return false;
-    }
+    // ❌ YA NO BLOQUEAMOS ACCESO
 
-    // BOTÓN NUEVO
+    // ✔ SOLO CONTROLAMOS BOTÓN
     const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
     const btn = document.getElementById('btnNuevo');
     if(btn) btn.style.display = puedeAgregar ? 'block' : 'none';
@@ -166,8 +157,6 @@ function getFilteredData(){
 // RENDER
 // =========================
 function render(){
-
-    if (!(permisosModulo.bitAdministrador || permisosModulo.bitConsulta)) return;
 
     const tbody = document.getElementById("tableBody");
     tbody.innerHTML = "";
@@ -228,7 +217,12 @@ function lastPage(){ page = Math.ceil(getFilteredData().length / rows) || 1; ren
 // =========================
 // MODAL
 // =========================
-function openModal(){ document.getElementById("modal").style.display = "flex"; }
+function openModal(){
+    if(!(permisosModulo.bitAdministrador || permisosModulo.bitAgregar))
+        return alert("❌ Sin permiso");
+
+    document.getElementById("modal").style.display = "flex";
+}
 
 function closeModal(){
     document.getElementById("modal").style.display = "none";
@@ -306,8 +300,8 @@ document.getElementById("rows").addEventListener("change",(e)=>{ rows=parseInt(e
 // INIT
 // =========================
 document.addEventListener("DOMContentLoaded", async () => {
-    const acceso = await cargarPermisos();
-    if (acceso) render();
+    await cargarPermisos();
+    render();
 });
 </script>
 
