@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>CRUD Proveedores</title>
-<link rel="stylesheet" href="/css/Principal_1.1.css">
-<link rel="stylesheet" href="/css/breadcrums.css"> 
-<style>
-    /* Estilos para asegurar que la paginación se vea correctamente */
-    .pagination { margin-top: 15px; display: flex; gap: 10px; align-items: center; justify-content: center; }
-    .pagination button { padding: 5px 12px; cursor: pointer; border: 1px solid #ccc; background: #fff; border-radius: 4px; }
-    .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
-</style>
+    <meta charset="UTF-8">
+    <title>CRUD Proveedores</title>
+    <link rel="stylesheet" href="/css/Principal_1.1.css">
+    <link rel="stylesheet" href="/css/breadcrums.css"> 
+    <style>
+        .pagination { margin-top: 15px; display: flex; gap: 10px; align-items: center; justify-content: center; }
+        .pagination button { padding: 5px 12px; cursor: pointer; border: 1px solid #ccc; background: #fff; border-radius: 4px; }
+        .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
+        /* Evita el parpadeo ocultando el botón nuevo por defecto en el CSS */
+        #btnNuevo { display: none; }
+    </style>
 </head>
 
 <body>
@@ -30,16 +31,16 @@
 </div>
 
 <table>
-<thead>
-<tr>
-    <th>Nombre</th>
-    <th>Apellidos</th>
-    <th>Teléfono</th>
-    <th>Correo</th>
-    <th>Acciones</th>
-</tr>
-</thead>
-<tbody id="tableBody"></tbody>
+    <thead>
+        <tr>
+            <th>Nombre</th>
+            <th>Apellidos</th>
+            <th>Teléfono</th>
+            <th>Correo</th>
+            <th>Acciones</th>
+        </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
 </table>
 
 <div class="pagination">
@@ -50,7 +51,7 @@
     <button id="btnLast" onclick="lastPage()">⏭</button>
 </div>
 
-<div class="modal" id="modal">
+<div class="modal" id="modal" style="display: none;">
     <div class="modal-content">
         <h3 id="modalTitle">Registrar Proveedor</h3>
         
@@ -81,19 +82,20 @@ let page = 1;
 let rows = 10;
 let editIndex = null;
 
-// --- 🛡️ ESTADO GLOBAL DE PERMISOS CORREGIDO ---
+// --- 🛡️ ESTADO GLOBAL ---
 let permisosModulo = {
     bitAgregar: 0, bitEditar: 0, bitConsulta: 0, bitEliminar: 0, bitDetalle: 0,
     bitAdministrador: 0 
 };
 
-// --- 🛡️ CARGAR PERMISOS DESDE EL SERVIDOR ---
+// --- 🛡️ CARGAR PERMISOS (ASÍNCRONO) ---
 async function cargarPermisos() {
     try {
+        // Asegúrate que el nombre 'Principal_1.2' coincida con tu DB
         const res = await fetch('/api/permisosPerfil/mis-permisos?modulo=Principal_1.2');
-        permisosModulo = await res.json();
+        const result = await res.json();
+        permisosModulo = result;
         
-        // Pase Maestro para el botón Nuevo
         const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
         const btn = document.getElementById('btnNuevo');
         if(btn) btn.style.display = puedeAgregar ? 'block' : 'none';
@@ -107,12 +109,8 @@ function persist(){
     localStorage.setItem("proveedores", JSON.stringify(data));
 }
 
-function totalPages(filteredLength){
-    return Math.ceil(filteredLength / rows) || 1;
-}
-
 function getFilteredData(){
-    let search = document.getElementById("search").value.toLowerCase();
+    let search = (document.getElementById("search").value || "").toLowerCase();
     return data.filter(d =>
         (d.nombreProveedor || "").toLowerCase().includes(search) ||
         (d.apellidosProveedor || "").toLowerCase().includes(search) ||
@@ -123,9 +121,11 @@ function getFilteredData(){
 
 function render(){
     let tbody = document.getElementById("tableBody");
+    if (!tbody) return;
     tbody.innerHTML = "";
+
     let filtered = getFilteredData();
-    let total = totalPages(filtered.length);
+    let total = Math.ceil(filtered.length / rows) || 1;
 
     if(page > total) page = total || 1;
 
@@ -135,7 +135,6 @@ function render(){
     paginated.forEach((d) => {
         let realIndex = data.indexOf(d); 
         
-        // --- 🛡️ LÓGICA DE BOTONES CON PASE MAESTRO ---
         const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
         const puedeEliminar = permisosModulo.bitAdministrador || permisosModulo.bitEliminar;
 
@@ -160,7 +159,6 @@ function render(){
         </tr>`;
     });
 
-    // Actualizar paginación
     document.getElementById("pageInfo").innerText = `Página ${page} de ${total}`;
     document.getElementById("btnPrev").disabled = (page === 1);
     document.getElementById("btnFirst").disabled = (page === 1);
@@ -168,19 +166,20 @@ function render(){
     document.getElementById("btnLast").disabled = (page === total);
 }
 
-// --- 🚩 FUNCIONES DE NAVEGACIÓN ---
+// --- NAVEGACIÓN ---
 function firstPage() { page = 1; render(); }
 function prevPage() { if (page > 1) { page--; render(); } }
 function nextPage() { 
-    if (page < totalPages(getFilteredData().length)) { page++; render(); } 
+    let total = Math.ceil(getFilteredData().length / rows) || 1;
+    if (page < total) { page++; render(); } 
 }
-function lastPage() { page = totalPages(getFilteredData().length); render(); }
-
-// --- MODAL OPS ---
-function openModal() {
-    document.getElementById("modal").style.display = "flex";
+function lastPage() { 
+    page = Math.ceil(getFilteredData().length / rows) || 1; 
+    render(); 
 }
 
+// --- MODAL ---
+function openModal() { document.getElementById("modal").style.display = "flex"; }
 function closeModal() {
     document.getElementById("modal").style.display = "none";
     document.getElementById("nombreProveedor").value = "";
@@ -191,7 +190,6 @@ function closeModal() {
     editIndex = null;
 }
 
-/* 🛡️ GUARDAR PROTEGIDO */
 function save(){
     const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
     const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
@@ -204,17 +202,9 @@ function save(){
     const correo = document.getElementById("Correo").value.trim();
     const telefono = document.getElementById("Telefono").value.trim();
 
-    if(!nombre || !apellidos || !correo || !telefono){
-        alert("❌ Todos los campos son obligatorios.");
-        return;
-    }
+    if(!nombre || !apellidos || !correo || !telefono) return alert("❌ Campos obligatorios.");
 
-    let obj = {
-        nombreProveedor: nombre,
-        apellidosProveedor: apellidos,
-        correo: correo,
-        telefono: telefono
-    };
+    let obj = { nombreProveedor: nombre, apellidosProveedor: apellidos, correo: correo, telefono: telefono };
 
     if(editIndex !== null) data[editIndex] = obj;
     else data.push(obj);
@@ -236,10 +226,8 @@ function edit(i){
 }
 
 function del(i){
-    const puedeEliminar = permisosModulo.bitAdministrador || permisosModulo.bitEliminar;
-    if(!puedeEliminar) return alert("❌ No tienes permiso para eliminar.");
-    
-    if(confirm("¿Seguro que deseas eliminar este proveedor?")){
+    if(!(permisosModulo.bitAdministrador || permisosModulo.bitEliminar)) return alert("❌ Sin permiso.");
+    if(confirm("¿Eliminar proveedor?")){
         data.splice(i,1);
         persist();
         render();
@@ -248,15 +236,13 @@ function del(i){
 
 // Listeners
 document.getElementById("search").addEventListener("input", () => { page = 1; render(); });
-document.getElementById("rows").addEventListener("change", (e) => { 
-    rows = parseInt(e.target.value); 
-    page = 1; 
-    render(); 
-});
+document.getElementById("rows").addEventListener("change", (e) => { rows = parseInt(e.target.value); page = 1; render(); });
 
-// --- 🛡️ INICIALIZACIÓN ---
+// --- 🚀 INICIALIZACIÓN SINCRONIZADA ---
 document.addEventListener("DOMContentLoaded", async () => {
+    // 1. Esperamos obligatoriamente a los permisos del servidor
     await cargarPermisos(); 
+    // 2. Renderizamos la tabla sabiendo ya qué botones mostrar
     render(); 
 });
 </script>

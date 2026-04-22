@@ -17,25 +17,21 @@ async function cargarPermisosMenu() {
             credentials: 'include'
         });
 
-        if (!res.ok) return;
+        if (!res.ok) return false;
 
         const data = await res.json();
 
-        console.log("🔥 MENUS BACKEND:", data);
-
-        // 🔥 DETECTAR ADMIN (por si lo mandas)
+        // 🔥 DETECTAR ADMIN
         const esAdmin = data.some(m =>
             m.bitAdministrador == 1 || m.bitAdministrador === true
         );
 
-        // 🔥 NORMALIZAR MENÚS
+        // 🔥 NORMALIZAR MENÚS RECIBIDOS DEL BACKEND
         const menusPermitidos = data.map(m =>
             normalizar(m.strNombreMenu)
         );
 
-        console.log("🔥 MENUS NORMALIZADOS:", menusPermitidos);
-
-        // 🔥 FILTRAR ITEMS
+        // 🔥 FILTRAR ITEMS DEL SUBMENÚ
         document.querySelectorAll(".submenu li").forEach(li => {
             const menuHTML = normalizar(li.dataset.menu);
 
@@ -43,12 +39,10 @@ async function cargarPermisosMenu() {
 
             const tienePermiso = esAdmin || menusPermitidos.includes(menuHTML);
 
-            console.log("CHECK:", menuHTML, tienePermiso);
-
             li.style.display = tienePermiso ? "block" : "none";
         });
 
-        // 🔥 OCULTAR MENÚS PADRE VACÍOS
+        // 🔥 OCULTAR MENÚS PADRE (SEGURIDAD, PRINCIPAL, ETC.) SI ESTÁN VACÍOS
         document.querySelectorAll(".menu > ul > li").forEach(menu => {
             const submenu = menu.querySelector(".submenu");
             if (!submenu) return;
@@ -59,8 +53,11 @@ async function cargarPermisosMenu() {
             menu.style.display = visibles.length > 0 ? "block" : "none";
         });
 
+        return true; // Retornamos éxito para el await
+
     } catch (err) {
         console.error("❌ Error filtrando menú:", err);
+        return false;
     }
 }
 
@@ -85,6 +82,7 @@ async function cargarDatosUsuario() {
                 infoPs[3].innerText = user.strCelular || 'No registrado';
             }
 
+            // Soporte para ambas nomenclaturas de imagen
             const foto = user.strFoto || user.FotoUrl || '/img/default-avatar.png';
 
             const navAvatar = document.getElementById('avatar-img');
@@ -99,7 +97,7 @@ async function cargarDatosUsuario() {
     }
 }
 
-// --- MENÚ INTERACTIVO ---
+// --- MENÚ INTERACTIVO (SIDEBAR Y DROPDOWNS) ---
 function inicializarMenu() {
     const menus = document.querySelectorAll(".menu > ul > li > a");
 
@@ -137,6 +135,7 @@ function inicializarMenu() {
         }
     }
 
+    // Cerrar al hacer clic fuera
     document.addEventListener("click", function(e) {
         if (!e.target.closest(".menu")) {
             document.querySelectorAll(".submenu").forEach(sub => {
@@ -150,9 +149,17 @@ function inicializarMenu() {
     });
 }
 
-// --- 🚀 INICIALIZACIÓN ---
-document.addEventListener("DOMContentLoaded", () => {
+// --- 🚀 INICIALIZACIÓN SÍNCRONA ---
+document.addEventListener("DOMContentLoaded", async () => {
+    // 1. Configuramos los eventos de clic
     inicializarMenu();
+    
+    // 2. Cargamos datos estéticos del usuario
     cargarDatosUsuario();
-    cargarPermisosMenu();
+    
+    // 3. Bloqueamos hasta que los permisos del menú se apliquen
+    // Esto evita que el menú "parpadee" o se muestre incompleto
+    await cargarPermisosMenu();
+    
+    console.log("✅ Menú procesado correctamente");
 });

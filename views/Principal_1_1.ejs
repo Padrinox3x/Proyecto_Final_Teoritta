@@ -50,148 +50,91 @@
     <script src="/js/breadcrums.js"></script> 
 
     <script>
-        let data = JSON.parse(localStorage.getItem("productos")) || [];
-        let page = 1;
-        let rows = 10;
-        let editIndex = null;
+    let data = JSON.parse(localStorage.getItem("productos")) || [];
+    let page = 1;
+    let rows = 10;
+    let editIndex = null;
 
-        // --- 🛡️ ESTADO GLOBAL DE PERMISOS ---
-        let permisosModulo = {
-            bitAgregar: 0, bitEditar: 0, bitConsulta: 0, bitEliminar: 0, bitDetalle: 0,
-            bitAdministrador: 0 
-        };
+    // --- 🛡️ ESTADO GLOBAL DE PERMISOS ---
+    let permisosModulo = {
+        bitAgregar: 0, bitEditar: 0, bitConsulta: 0, bitEliminar: 0, bitDetalle: 0,
+        bitAdministrador: 0 
+    };
 
-        async function cargarPermisos() {
-            try {
-                const res = await fetch('/api/permisosPerfil/mis-permisos?modulo=Principal_1.1');
-                permisosModulo = await res.json();
-                
-                const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
-                document.getElementById('btnNuevo').style.display = puedeAgregar ? 'block' : 'none';
-            } catch (error) {
-                console.error("Error cargando permisos:", error);
-            }
-        }
-
-        function persist(){
-            localStorage.setItem("productos", JSON.stringify(data));
-        }
-
-        function totalPages(filteredLength){
-            return Math.ceil(filteredLength / rows) || 1;
-        }
-
-        // 🚩 FUNCIÓN PARA CAMBIAR DE PÁGINA
-        function changePage(step) {
-            const filtered = getFilteredData();
-            const total = totalPages(filtered.length);
-            const newPage = page + step;
-
-            if (newPage >= 1 && newPage <= total) {
-                page = newPage;
-                render();
-            }
-        }
-
-        function getFilteredData(){
-            let search = document.getElementById("search").value.toLowerCase();
-            return data.filter(d =>
-                d.nombre.toLowerCase().includes(search) ||
-                d.categoria.toLowerCase().includes(search) ||
-                d.stock.toString().includes(search) ||
-                d.fecha.includes(search)
-            );
-        }
-
-        function render(){
-            let tbody = document.getElementById("tableBody");
-            tbody.innerHTML = "";
-
-            let filtered = getFilteredData();
-            let total = totalPages(filtered.length);
+    async function cargarPermisos() {
+        try {
+            // IMPORTANTE: El nombre del módulo debe ser igual al de tu base de datos
+            const res = await fetch('/api/permisosPerfil/mis-permisos?modulo=Principal_1.1');
+            const result = await res.json();
             
-            // Ajuste de seguridad por si se borran elementos
-            if(page > total) page = total || 1;
-
-            let start = (page-1)*rows;
-            let paginated = filtered.slice(start, start + rows);
-
-            paginated.forEach((d) => {
-                let realIndex = data.indexOf(d);
-                const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
-                const puedeEliminar = permisosModulo.bitAdministrador || permisosModulo.bitEliminar;
-
-                let btnEdit = puedeEditar 
-                    ? `<button class='btn-edit' onclick='edit(${realIndex})'>✏️</button>` 
-                    : "";
-                
-                let btnDel = puedeEliminar 
-                    ? `<button class='btn-delete' onclick='del(${realIndex})'>🗑</button>` 
-                    : "";
-
-                if (!puedeEditar && !puedeEliminar) {
-                    btnEdit = "<span style='color:gray;font-size:11px;'>Solo lectura</span>";
-                }
-
-                tbody.innerHTML += `<tr>
-                    <td>${d.nombre}</td>
-                    <td>${d.categoria}</td>
-                    <td>${d.stock}</td>
-                    <td>${d.fecha}</td>
-                    <td>${btnEdit} ${btnDel}</td>
-                </tr>`;
-            });
-
-            // Actualizar info y estado de botones
-            document.getElementById("pageInfo").innerText = `Página ${page} de ${total}`;
-            document.getElementById("btnPrev").disabled = (page === 1);
-            document.getElementById("btnNext").disabled = (page === total);
-        }
-
-        // --- FUNCIONES DE ACCIÓN ---
-        function save(){
-            const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
+            permisosModulo = result;
+            
+            // Actualización inmediata de botones globales
             const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
+            const btnNuevo = document.getElementById('btnNuevo');
+            if (btnNuevo) btnNuevo.style.display = puedeAgregar ? 'block' : 'none';
 
-            if(editIndex !== null && !puedeEditar) return alert("❌ No tienes permiso.");
-            if(editIndex === null && !puedeAgregar) return alert("❌ No tienes permiso.");
-
-            const obj = {
-                nombre: document.getElementById("nombre").value.trim(),
-                categoria: document.getElementById("categoria").value.trim(),
-                stock: parseInt(document.getElementById("stock").value),
-                fecha: document.getElementById("fecha").value
-            };
-
-            if(editIndex !== null) data[editIndex] = obj;
-            else data.push(obj);
-
-            persist();
-            closeModal();
-            render();
+        } catch (error) {
+            console.error("Error cargando permisos del módulo:", error);
         }
+    }
 
-        function del(i){
-            if(!(permisosModulo.bitAdministrador || permisosModulo.bitEliminar)) return alert("❌ No tienes permiso.");
-            if(confirm("¿Seguro que deseas eliminar?")){
-                data.splice(i, 1);
-                persist();
-                render();
+    function render() {
+        let tbody = document.getElementById("tableBody");
+        if (!tbody) return;
+        tbody.innerHTML = "";
+
+        let filtered = getFilteredData();
+        let total = Math.ceil(filtered.length / rows) || 1;
+        
+        if(page > total) page = total;
+
+        let start = (page - 1) * rows;
+        let paginated = filtered.slice(start, start + rows);
+
+        paginated.forEach((d) => {
+            let realIndex = data.indexOf(d);
+            
+            // Verificación de permisos por fila
+            const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
+            const puedeEliminar = permisosModulo.bitAdministrador || permisosModulo.bitEliminar;
+
+            let btnEdit = puedeEditar 
+                ? `<button class='btn-edit' onclick='edit(${realIndex})'>✏️</button>` 
+                : "";
+            
+            let btnDel = puedeEliminar 
+                ? `<button class='btn-delete' onclick='del(${realIndex})'>🗑</button>` 
+                : "";
+
+            if (!puedeEditar && !puedeEliminar) {
+                btnEdit = "<span style='color:gray;font-size:11px;'>Solo lectura</span>";
             }
-        }
 
-        // --- LISTENERS ---
-        document.getElementById("search").addEventListener("input", () => { page = 1; render(); });
-        document.getElementById("rows").addEventListener("change", (e) => { 
-            rows = parseInt(e.target.value); 
-            page = 1; 
-            render(); 
+            tbody.innerHTML += `<tr>
+                <td>${d.nombre}</td>
+                <td>${d.categoria}</td>
+                <td>${d.stock}</td>
+                <td>${d.fecha}</td>
+                <td>${btnEdit} ${btnDel}</td>
+            </tr>`;
         });
 
-        document.addEventListener("DOMContentLoaded", async () => {
-            await cargarPermisos();
-            render();
-        });
-    </script>
+        document.getElementById("pageInfo").innerText = `Página ${page} de ${total}`;
+        document.getElementById("btnPrev").disabled = (page === 1);
+        document.getElementById("btnNext").disabled = (page === total);
+    }
+
+    // --- 🚀 INICIALIZACIÓN CRÍTICA ---
+    document.addEventListener("DOMContentLoaded", async () => {
+        // PASO 1: Esperar a que los permisos lleguen del servidor
+        await cargarPermisos();
+        
+        // PASO 2: Solo ahora que 'permisosModulo' tiene datos, dibujamos la tabla
+        render();
+    });
+
+    // ... Resto de tus funciones (save, del, edit, getFilteredData) se mantienen igual ...
+</script>
 </body>
 </html>

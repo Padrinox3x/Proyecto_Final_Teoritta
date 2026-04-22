@@ -9,6 +9,8 @@
         .pagination { margin-top: 15px; display: flex; gap: 10px; align-items: center; justify-content: center; }
         .pagination button { padding: 5px 12px; cursor: pointer; border: 1px solid #ccc; background: #fff; border-radius: 4px; }
         .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
+        /* Oculto por defecto para evitar parpadeo */
+        #btnNuevo { display: none; }
     </style>
 </head>
 
@@ -25,7 +27,7 @@
         <option value="15">15</option>
     </select>
 
-    <button id="btnNuevo" class="btn-add" onclick="openModal()" style="display: none;">+</button>
+    <button id="btnNuevo" class="btn-add" onclick="openModal()">+</button>
 </div>
 
 <table>
@@ -49,17 +51,22 @@
     <button id="btnLast" onclick="lastPage()">⏭</button>
 </div>
 
-<div class="modal" id="modal">
+<div class="modal" id="modal" style="display: none;">
     <div class="modal-content">
         <h3 id="modalTitle">Registrar Proveedor</h3>
+        
         <label>Nombre</label>
         <input id="nombreProveedor" maxlength="50" oninput="this.value = this.value.replace(/[0-9]/g, '')">
+        
         <label>Apellidos</label>
         <input id="ApellidosProveedor" maxlength="50" oninput="this.value = this.value.replace(/[0-9]/g, '')">
+        
         <label>Correo Electrónico</label>
         <input id="Correo" type="email">
+        
         <label>Teléfono</label>
         <input id="Telefono" maxlength="15" oninput="this.value = this.value.replace(/[^0-9]/g, '')">
+        
         <div class="acciones-modal">
             <button class="btn-save" onclick="save()">Guardar</button>
             <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
@@ -81,16 +88,13 @@ let permisosModulo = {
     bitAdministrador: 0 
 };
 
-// --- 🛡️ CARGAR PERMISOS CORREGIDO ---
+// --- 🛡️ CARGAR PERMISOS (Sincronizado) ---
 async function cargarPermisos() {
     try {
-        // CORRECCIÓN: Se cambia Principal_1.2 por Principal_2.1 para que coincida con la BD
+        // Coincide con Principal_2.1 en tu BD
         const res = await fetch('/api/permisosPerfil/mis-permisos?modulo=Principal_2.1');
         permisosModulo = await res.json();
         
-        console.log("Permisos activos para este módulo:", permisosModulo);
-
-        // Control visual del botón Nuevo
         const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
         const btn = document.getElementById('btnNuevo');
         if(btn) btn.style.display = puedeAgregar ? 'block' : 'none';
@@ -101,19 +105,21 @@ async function cargarPermisos() {
 }
 
 function render(){
-    let tbody = document.getElementById("tableBody");
+    const tbody = document.getElementById("tableBody");
+    if (!tbody) return;
     tbody.innerHTML = "";
-    let filtered = getFilteredData();
-    let total = Math.ceil(filtered.length / rows) || 1;
 
-    if(page > total) page = total;
-    let start = (page-1)*rows;
-    let paginated = filtered.slice(start, start+rows);
+    const filtered = getFilteredData();
+    const total = Math.ceil(filtered.length / rows) || 1;
+
+    if(page > total) page = total || 1;
+
+    const start = (page - 1) * rows;
+    const paginated = filtered.slice(start, start + rows);
 
     paginated.forEach((d) => {
-        let realIndex = data.indexOf(d); 
+        const realIndex = data.indexOf(d); 
         
-        // --- 🛡️ LÓGICA DE BOTONES ---
         const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
         const puedeEliminar = permisosModulo.bitAdministrador || permisosModulo.bitEliminar;
 
@@ -125,53 +131,74 @@ function render(){
             botonesAccion += `<button class="btn-delete" onclick="del(${realIndex})">🗑</button>`;
         }
         
-        // Si no tiene ningún permiso de escritura
         if (!puedeEditar && !puedeEliminar) {
             botonesAccion = '<span style="color:gray; font-size:11px;">Solo lectura</span>';
         }
 
         tbody.innerHTML += `
         <tr>
-            <td>${d.nombreProveedor}</td>
-            <td>${d.apellidosProveedor}</td>
-            <td>${d.telefono}</td>
-            <td>${d.correo}</td>
+            <td>${d.nombreProveedor || ''}</td>
+            <td>${d.apellidosProveedor || ''}</td>
+            <td>${d.telefono || ''}</td>
+            <td>${d.correo || ''}</td>
             <td>${botonesAccion}</td>
         </tr>`;
     });
 
     document.getElementById("pageInfo").innerText = `Página ${page} de ${total}`;
+    document.getElementById("btnPrev").disabled = (page === 1);
+    document.getElementById("btnFirst").disabled = (page === 1);
+    document.getElementById("btnNext").disabled = (page === total);
+    document.getElementById("btnLast").disabled = (page === total);
 }
 
-// --- FUNCIONES RESTANTES ---
+// --- FUNCIONES DE APOYO ---
 function getFilteredData(){
-    let search = document.getElementById("search").value.toLowerCase();
+    const search = (document.getElementById("search").value || "").toLowerCase();
     return data.filter(d =>
         (d.nombreProveedor || "").toLowerCase().includes(search) ||
-        (d.apellidosProveedor || "").toLowerCase().includes(search)
+        (d.apellidosProveedor || "").toLowerCase().includes(search) ||
+        (d.correo || "").toLowerCase().includes(search)
     );
 }
 
 function persist(){ localStorage.setItem("proveedores", JSON.stringify(data)); }
 function openModal() { document.getElementById("modal").style.display = "flex"; }
-function closeModal() { document.getElementById("modal").style.display = "none"; editIndex = null; }
+function closeModal() { 
+    document.getElementById("modal").style.display = "none"; 
+    document.getElementById("nombreProveedor").value = "";
+    document.getElementById("ApellidosProveedor").value = "";
+    document.getElementById("Correo").value = "";
+    document.getElementById("Telefono").value = "";
+    document.getElementById("modalTitle").innerText = "Registrar Proveedor";
+    editIndex = null; 
+}
 
+// --- NAVEGACIÓN ---
+function firstPage() { page = 1; render(); }
+function prevPage() { if (page > 1) { page--; render(); } }
+function nextPage() { 
+    let total = Math.ceil(getFilteredData().length / rows) || 1;
+    if (page < total) { page++; render(); } 
+}
+function lastPage() { page = Math.ceil(getFilteredData().length / rows) || 1; render(); }
+
+// --- ACCIONES CRUD ---
 function save(){
     const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
     const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
 
-    if(editIndex !== null && !puedeEditar) return alert("❌ No tienes permiso para editar.");
-    if(editIndex === null && !puedeAgregar) return alert("❌ No tienes permiso para registrar.");
+    if(editIndex !== null && !puedeEditar) return alert("❌ No tienes permiso.");
+    if(editIndex === null && !puedeAgregar) return alert("❌ No tienes permiso.");
 
-    const nombre = document.getElementById("nombreProveedor").value.trim();
-    const apellidos = document.getElementById("ApellidosProveedor").value.trim();
-    
-    let obj = {
-        nombreProveedor: nombre,
-        apellidosProveedor: apellidos,
-        correo: document.getElementById("Correo").value,
-        telefono: document.getElementById("Telefono").value
+    const obj = {
+        nombreProveedor: document.getElementById("nombreProveedor").value.trim(),
+        apellidosProveedor: document.getElementById("ApellidosProveedor").value.trim(),
+        correo: document.getElementById("Correo").value.trim(),
+        telefono: document.getElementById("Telefono").value.trim()
     };
+
+    if(!obj.nombreProveedor || !obj.apellidosProveedor) return alert("Nombre y Apellidos son obligatorios");
 
     if(editIndex !== null) data[editIndex] = obj;
     else data.push(obj);
@@ -183,25 +210,33 @@ function save(){
 
 function edit(i){
     editIndex = i;
-    let d = data[i];
+    const d = data[i];
     document.getElementById("nombreProveedor").value = d.nombreProveedor;
     document.getElementById("ApellidosProveedor").value = d.apellidosProveedor;
+    document.getElementById("Correo").value = d.correo;
+    document.getElementById("Telefono").value = d.telefono;
     document.getElementById("modalTitle").innerText = "Editar Proveedor";
     openModal();
 }
 
 function del(i){
     if(!(permisosModulo.bitAdministrador || permisosModulo.bitEliminar)) return alert("❌ Sin permiso.");
-    if(confirm("¿Eliminar?")){
+    if(confirm("¿Seguro que deseas eliminar este registro?")){
         data.splice(i,1);
         persist();
         render();
     }
 }
 
-// Inicialización
+// Listeners
+document.getElementById("search").addEventListener("input", () => { page = 1; render(); });
+document.getElementById("rows").addEventListener("change", (e) => { rows = parseInt(e.target.value); page = 1; render(); });
+
+// --- 🚀 INICIALIZACIÓN ---
 document.addEventListener("DOMContentLoaded", async () => {
+    // 1. Cargar permisos primero (await)
     await cargarPermisos(); 
+    // 2. Renderizar después
     render(); 
 });
 </script>
