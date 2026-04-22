@@ -1,8 +1,8 @@
 <%
-const esAdmin = (permisos || []).some(p => 
-  p.bitAdministrador == 1 || 
-  p.bitAdministrador === true || 
-  p.bitAdministrador === "true"
+const esAdmin = user && (
+  user.bitAdministrador == 1 || 
+  user.bitAdministrador === true || 
+  user.bitAdministrador === "true"
 );
 
 const tienePermiso = (modulo) => {
@@ -23,7 +23,7 @@ const tienePermiso = (modulo) => {
       tienePermiso("Usuario") ||
       tienePermiso("Modulo") ||
       tienePermiso("Perfil") ||
-      tienePermiso("Permisos_Perfil")
+      tienePermiso("Permisos")
     ) { %>
     
     <li>
@@ -42,8 +42,8 @@ const tienePermiso = (modulo) => {
           <li><a href="/perfil">Perfil</a></li>
         <% } %>
 
-        <% if (tienePermiso("Permisos_Perfil")) { %>
-          <li><a href="/permisos">Permisos_Perfil</a></li>
+        <% if (tienePermiso("Permisos")) { %>
+          <li><a href="/permisos">Permisos</a></li>
         <% } %>
 
       </ul>
@@ -106,39 +106,3 @@ const tienePermiso = (modulo) => {
 
   </ul>
 </nav>
-
-<aside id="user-sidebar" class="user-sidebar">
-  <div class="sidebar-header">
-    <h3>Perfil de Usuario</h3>
-    <button id="close-sidebar">&times;</button>
-  </div>
-  
-  <div class="sidebar-content">
-    <% if (locals.user) { %>
-      <div class="profile-main-photo">
-          <img src="<%= user.FotoUrl || '/img/default-avatar.png' %>" id="sidebar-avatar-img" alt="Avatar">
-      </div>
-
-      <div class="profile-info">
-        <p><strong>Usuario:</strong> <span><%= user.strNombreUsuario %></span></p>
-        <p><strong>Perfil:</strong> <span><%= user.PerfilNombre || 'Usuario' %></span></p>
-        <p><strong>Correo:</strong> <span><%= user.strCorreo %></span></p>
-        <p><strong>Celular:</strong> <span><%= user.strCelular || 'No registrado' %></span></p>
-      </div>
-
-      <div class="upload-section">
-        <p class="upload-text">Cambiar foto de perfil</p>
-        <input type="file" id="image-input" accept="image/*" style="display: none;">
-        <button type="button" onclick="document.getElementById('image-input').click()" class="btn-select">Seleccionar Imagen</button>
-        <button id="btn-upload" class="btn-primary">Actualizar Foto</button>
-      </div>
-    <% } else { %>
-      <div class="profile-info">
-        <p>Sesión no iniciada</p>
-      </div>
-    <% } %>
-
-    <hr>
-    <a href="/login" class="btn-logout">Cerrar Sesión</a>
-  </div>
-</aside>
