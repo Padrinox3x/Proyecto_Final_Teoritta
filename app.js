@@ -8,6 +8,7 @@ const { sql, conectarDB } = require('./db');
 
 // 🔐 Middleware de autenticación
 const isAuthenticated = require('./middlewares/auth');
+const injectPermissions = require('./middlewares/injectPermissions');
 
 // 🔥 Rutas
 const menuRoutes = require('./routes/menu.routes');
@@ -22,12 +23,17 @@ const PORT = process.env.PORT || 3000;
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
+
+
+
 /* =======================
     MIDDLEWARES
 ======================= */
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static('public'));
+app.use(injectPermissions);
+
 
 app.set('trust proxy', 1);
 
