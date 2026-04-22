@@ -20,19 +20,27 @@ document.addEventListener('DOMContentLoaded', async () => {
     let limit = parseInt(selectLimit.value);
     let totalPaginas = 1;
     let timeout = null;
+    
+    // 🛡️ Se añade bitAdministrador al estado global
     let permisosModulo = {
-        bitAgregar: 0, bitEditar: 0, bitConsulta: 0, bitEliminar: 0, bitDetalle: 0
+        bitAgregar: 0, bitEditar: 0, bitConsulta: 0, bitEliminar: 0, bitDetalle: 0,
+        bitAdministrador: 0 
     };
 
     // --- 3. FUNCIONES DE PERMISOS ---
     async function cargarPermisosDeUsuario() {
         try {
-            const res = await fetch('/api/mis-permisos?modulo=Usuario');
+            // Se usa la ruta estandarizada para consultar permisos por módulo
+            const res = await fetch('/api/permisosPerfil/mis-permisos?modulo=Usuario');
             permisosModulo = await res.json();
             
-            // Ocultar botón "Nuevo" si no tiene permiso bitAgregar
-            if (!permisosModulo.bitAgregar) {
+            // 🛡️ Lógica: Si es Admin o tiene el bit de agregar, mostrar botón "Nuevo"
+            const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
+            
+            if (!puedeAgregar) {
                 btnNuevo.style.display = 'none';
+            } else {
+                btnNuevo.style.display = 'block';
             }
         } catch (error) {
             console.error("Error cargando permisos:", error);
@@ -68,16 +76,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         result.data.forEach(u => {
             const tr = document.createElement('tr');
             
-            // Renderizado dinámico de botones según bits
+            // 🛡️ Definimos permisos efectivos combinando bits individuales con el rol Admin
+            const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
+            const puedeEliminar = permisosModulo.bitAdministrador || permisosModulo.bitEliminar;
+
             let botonesAccion = '';
-            if (permisosModulo.bitEditar) {
-                botonesAccion += `<button class="editar btn-edit">✏️</button>`;
+            if (puedeEditar) {
+                botonesAccion += `<button class="editar btn-edit">✏️</button> `;
             }
-            if (permisosModulo.bitEliminar) {
+            if (puedeEliminar) {
                 botonesAccion += `<button class="eliminar btn-delete">🗑</button>`;
             }
-            if (!permisosModulo.bitEditar && !permisosModulo.bitEliminar) {
-                botonesAccion = '<span style="color:gray; font-size:12px;">Sin permisos</span>';
+            
+            if (!puedeEditar && !puedeEliminar) {
+                botonesAccion = '<span style="color:gray; font-size:12px;">Solo lectura</span>';
             }
 
             tr.innerHTML = `
@@ -89,7 +101,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 <td>${botonesAccion}</td>
             `;
 
-            // Asignar eventos solo si los botones existen en el DOM de la fila
+            // Asignar eventos solo si los botones se renderizaron
             const btnEdit = tr.querySelector('.editar');
             if (btnEdit) {
                 btnEdit.onclick = async () => {
@@ -107,9 +119,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             const btnDel = tr.querySelector('.eliminar');
             if (btnDel) {
                 btnDel.onclick = async () => {
-                    if (!confirm('¿Eliminar usuario?')) return;
-                    await fetch(`/api/usuario/${u.idUsuario}`, { method: 'DELETE' });
-                    cargarUsuarios();
+                    if (!confirm('¿Seguro que desea eliminar este usuario?')) return;
+                    const delRes = await fetch(`/api/usuario/${u.idUsuario}`, { method: 'DELETE' });
+                    const delResult = await delRes.json();
+                    if(delResult.ok) cargarUsuarios();
+                    else alert("No se pudo eliminar el usuario.");
                 };
             }
             
@@ -153,12 +167,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
+        
+        // Bloqueo de seguridad en el envío
         const id = document.getElementById('id').value;
+        if (id && !(permisosModulo.bitAdministrador || permisosModulo.bitEditar)) return alert("No tienes permiso para editar.");
+        if (!id && !(permisosModulo.bitAdministrador || permisosModulo.bitAgregar)) return alert("No tienes permiso para agregar.");
+
         const nombre = document.getElementById('strNombreUsuario').value.trim();
         const perfil = document.getElementById('Perfil').value;
         const correo = document.getElementById('strCorreo').value.trim();
 
-        // Validaciones básicas
         if (!/^[A-Za-zÁ-ú\sñÑ]+$/.test(nombre)) return alert('❌ El nombre solo permite letras.');
         if (!perfil) return alert('❌ Selecciona un perfil.');
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) return alert('❌ Correo inválido.');
@@ -186,11 +204,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             cerrarModal();
             cargarUsuarios();
         } else {
-            alert('❌ Error al guardar');
+            alert('❌ Error al guardar: ' + (result.error || 'Intente de nuevo'));
         }
     });
 
     // --- 7. INICIALIZACIÓN ---
-    await cargarPermisosDeUsuario(); // Primero saber qué puede hacer el usuario
-    cargarUsuarios();               // Luego cargar la lista con esos permisos aplicados
+    // Importante usar await para que los permisos se carguen antes que los usuarios
+    await cargarPermisosDeUsuario(); 
+    cargarUsuarios(); 
 });
