@@ -1,190 +1,249 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>CRUD Transportes</title>
-<link rel="stylesheet" href="/css/Principal_1.1.css">
-<link rel="stylesheet" href="/css/breadcrums.css"> 
-<style>
-    /* Estilo para asegurar la visualización de la paginación */
-    .pagination { margin-top: 15px; display: flex; gap: 10px; align-items: center; justify-content: center; }
-    .pagination button { padding: 5px 12px; cursor: pointer; border: 1px solid #ccc; background: #fff; border-radius: 4px; }
-    .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
-</style>
+    <meta charset="UTF-8">
+    <title>CRUD Transportes</title>
+    <link rel="stylesheet" href="/css/Principal_1.1.css">
+    <link rel="stylesheet" href="/css/breadcrums.css"> 
+    <style>
+        .pagination { margin-top: 15px; display: flex; gap: 10px; align-items: center; justify-content: center; }
+        .pagination button { padding: 5px 12px; cursor: pointer; border: 1px solid #ccc; background: #fff; border-radius: 4px; }
+        .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
+    </style>
 </head>
 
 <body>
+    <%- include('partials/breadcrumb') %>
 
-<%- include('partials/breadcrumb') %>
+    <div class="top-bar">
+        <input type="text" id="search" placeholder="Buscar por placa, marca o modelo...">
+        
+        <select id="rows">
+            <option value="5">5</option>
+            <option value="10" selected>10</option>
+            <option value="15">15</option>
+        </select>
+        <button id="btnNuevo" class="btn-add" onclick="openModal()">+</button>
+    </div>
 
-<div class="top-bar">
-    <input type="text" id="search" placeholder="Buscar por placa, marca o modelo...">
-    
-    <select id="rows">
-        <option value="5">5</option>
-        <option value="10" selected>10</option>
-        <option value="15">15</option>
-    </select>
-    <button id="btnNuevo" class="btn-add" onclick="openModal()">+</button>
-</div>
+    <table>
+        <thead>
+            <tr>
+                <th>Placas</th>
+                <th>Marca</th>
+                <th>Modelo</th>
+                <th>Año</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
 
-<table>
-<thead>
-<tr>
-    <th>Placas</th>
-    <th>Marca</th>
-    <th>Modelo</th>
-    <th>Año</th>
-    <th>Acciones</th>
-</tr>
-</thead>
-<tbody id="tableBody"></tbody>
-</table>
+    <div class="pagination">
+        <button id="btnFirst" onclick="firstPage()">⏮</button>
+        <button id="btnPrev" onclick="changePage(-1)">◀</button>
+        <span id="pageInfo"></span>
+        <button id="btnNext" onclick="changePage(1)">▶</button>
+        <button id="btnLast" onclick="lastPage()">⏭</button>
+    </div>
 
-<div class="pagination">
-    <button id="btnFirst" onclick="firstPage()">⏮</button>
-    <button id="btnPrev" onclick="prevPage()">◀</button>
-    <span id="pageInfo"></span>
-    <button id="btnNext" onclick="nextPage()">▶</button>
-    <button id="btnLast" onclick="lastPage()">⏭</button>
-</div>
-
-<div class="modal" id="modal">
-    <div class="modal-content">
-        <h3 id="modalTitle">Registrar Transporte</h3>
-        
-        <label>Placas</label>
-        <input id="placas" placeholder="Ej. ABC-1234" 
-               oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9-]/g, '')" maxlength="10">
-        
-        <label>Marca</label>
-        <input id="marca" placeholder="Ej. Toyota" 
-         maxlength="50" 
-               oninput="this.value = this.value.replace(/[0-9]/g, '')">
-        
-        <label>Modelo</label>
-        <input id="modelo" placeholder="Ej. Hilux">
-        
-        <label>Año</label>
-        <input id="year" type="number" placeholder="2024" min="1950" max="2027"
-               oninput="if(this.value.length > 4) this.value = this.value.slice(0,4)">
-        
-        <div class="acciones-modal">
-            <button class="btn-save" onclick="save()">Guardar</button>
-            <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Registrar Transporte</h3>
+            
+            <label>Placas</label>
+            <input id="placas" placeholder="Ej. ABC-1234" maxlength="10"
+                   oninput="this.value = this.value.toUpperCase().replace(/[^A-Z0-9-]/g, '')">
+            
+            <label>Marca</label>
+            <input id="marca" placeholder="Ej. Toyota" maxlength="50" 
+                   oninput="this.value = this.value.replace(/[0-9]/g, '')">
+            
+            <label>Modelo</label>
+            <input id="modelo" placeholder="Ej. Hilux">
+            
+            <label>Año</label>
+            <input id="year" type="number" placeholder="2024" min="1950" max="2027"
+                   oninput="if(this.value.length > 4) this.value = this.value.slice(0,4)">
+            
+            <div class="acciones-modal">
+                <button class="btn-save" onclick="save()">Guardar</button>
+                <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+            </div>
         </div>
     </div>
-</div>
 
-<script>
-let data = JSON.parse(localStorage.getItem("transportes")) || [];
-let page = 1;
-let rows = 10;
-let editIndex = null;
+    <script src="/js/breadcrums.js"></script> 
 
-// --- 🛡️ ESTADO GLOBAL DE PERMISOS ---
-// Inicializamos todo en 0 para que por defecto sea "Solo Lectura" hasta que el servidor responda
-let permisosModulo = {
-    bitAgregar: 0, bitEditar: 0, bitConsulta: 0, bitEliminar: 0, bitDetalle: 0,
-    bitAdministrador: 0 
-};
+    <script>
+        let data = JSON.parse(localStorage.getItem("transportes")) || [];
+        let page = 1;
+        let rows = 10;
+        let editIndex = null;
 
-// --- 🛡️ CARGAR PERMISOS ---
-async function cargarPermisos() {
-    try {
-        // IMPORTANTE: Verifica que 'Principal_2_1' sea el nombre exacto en tu tabla de Modulos
-        const res = await fetch('/api/permisosPerfil/mis-permisos?modulo=Principal_2_1');
-        const json = await res.json();
-        
-        if (json) {
-            permisosModulo = json;
-            console.log("Permisos cargados para Transportes:", permisosModulo);
+        // --- 🛡️ ESTADO GLOBAL DE PERMISOS ---
+        let permisosModulo = {
+            bitAgregar: 0, bitEditar: 0, bitConsulta: 0, bitEliminar: 0, bitDetalle: 0,
+            bitAdministrador: 0 
+        };
+
+        async function cargarPermisos() {
+            try {
+                // Aseguramos que el nombre del módulo sea Principal_2_1
+                const res = await fetch('/api/permisosPerfil/mis-permisos?modulo=Principal_2_1');
+                permisosModulo = await res.json();
+                
+                const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
+                document.getElementById('btnNuevo').style.display = puedeAgregar ? 'block' : 'none';
+            } catch (error) {
+                console.error("Error cargando permisos:", error);
+            }
         }
 
-        // Aplicar visibilidad del botón nuevo inmediatamente
-        const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
-        const btn = document.getElementById('btnNuevo');
-        if(btn) btn.style.display = puedeAgregar ? 'block' : 'none';
-        
-    } catch (error) {
-        console.error("Error crítico cargando permisos de Transportes:", error);
-        // En caso de error, mantenemos permisos en 0 por seguridad
-    }
-}
-
-// ... (persist, totalPages, getFilteredData se mantienen igual) ...
-
-function render(){
-    let tbody = document.getElementById("tableBody");
-    tbody.innerHTML = "";
-    let filtered = getFilteredData();
-    let total = totalPages(filtered.length);
-
-    if(page > total) page = total || 1;
-
-    let start = (page-1)*rows;
-    let paginated = filtered.slice(start, start+rows);
-
-    // Definimos las constantes de permiso antes del loop para mayor eficiencia
-    const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
-    const puedeEliminar = permisosModulo.bitAdministrador || permisosModulo.bitEliminar;
-
-    paginated.forEach((d) => {
-        let realIndex = data.indexOf(d); 
-        
-        let botonesAccion = "";
-        if (puedeEditar) {
-            botonesAccion += `<button class="btn-edit" onclick="edit(${realIndex})">✏️</button> `;
-        }
-        if (puedeEliminar) {
-            botonesAccion += `<button class="btn-delete" onclick="del(${realIndex})">🗑</button>`;
-        }
-        
-        if (!puedeEditar && !puedeEliminar) {
-            botonesAccion = '<span style="color:gray; font-size:11px;">Solo lectura</span>';
+        function persist(){
+            localStorage.setItem("transportes", JSON.stringify(data));
         }
 
-        tbody.innerHTML += `
-        <tr>
-            <td>${d.placas}</td>
-            <td>${d.marca}</td>
-            <td>${d.modelo}</td>
-            <td>${d.year}</td>
-            <td>${botonesAccion}</td>
-        </tr>`;
-    });
+        function totalPages(filteredLength){
+            return Math.ceil(filteredLength / rows) || 1;
+        }
 
-    // Actualizar paginación
-    document.getElementById("pageInfo").innerText = `Página ${page} de ${total}`;
-    document.getElementById("btnPrev").disabled = (page === 1);
-    document.getElementById("btnFirst").disabled = (page === 1);
-    document.getElementById("btnNext").disabled = (page === total);
-    document.getElementById("btnLast").disabled = (page === total);
-}
+        function getFilteredData(){
+            let search = document.getElementById("search").value.toLowerCase();
+            return data.filter(d =>
+                (d.placas || "").toLowerCase().includes(search) ||
+                (d.marca || "").toLowerCase().includes(search) ||
+                (d.modelo || "").toLowerCase().includes(search) ||
+                (d.year || "").toString().includes(search)
+            );
+        }
 
-// ... (Navegación y Modal Logic se mantienen igual) ...
+        function render(){
+            let tbody = document.getElementById("tableBody");
+            tbody.innerHTML = "";
+            let filtered = getFilteredData();
+            let total = totalPages(filtered.length);
 
-/* 🛡️ GUARDAR PROTEGIDO */
-function save(){
-    // Re-validamos permisos justo antes de guardar por seguridad
-    const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
-    const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
+            if(page > total) page = total || 1;
 
-    if(editIndex !== null && !puedeEditar) return alert("❌ Sin permiso para editar.");
-    if(editIndex === null && !puedeAgregar) return alert("❌ Sin permiso para registrar.");
+            let start = (page-1)*rows;
+            let paginated = filtered.slice(start, start + rows);
 
-    // ... (Resto de la lógica de guardado) ...
-}
+            const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
+            const puedeEliminar = permisosModulo.bitAdministrador || permisosModulo.bitEliminar;
 
-// ... (Edit y Del se mantienen igual) ...
+            paginated.forEach((d) => {
+                let realIndex = data.indexOf(d); 
+                
+                let btnEdit = puedeEditar 
+                    ? `<button class="btn-edit" onclick="edit(${realIndex})">✏️</button> ` 
+                    : "";
+                let btnDel = puedeEliminar 
+                    ? `<button class="btn-delete" onclick="del(${realIndex})">🗑</button>` 
+                    : "";
 
-// --- 🛡️ INICIO CONTROLADO ---
-document.addEventListener("DOMContentLoaded", async () => {
-    // 1. Esperamos a que los permisos lleguen del servidor
-    await cargarPermisos();
-    // 2. Una vez que tenemos los bits, dibujamos la tabla
-    render();
-});
-</script>
+                if (!puedeEditar && !puedeEliminar) {
+                    btnEdit = '<span style="color:gray; font-size:11px;">Solo lectura</span>';
+                }
+
+                tbody.innerHTML += `
+                <tr>
+                    <td>${d.placas}</td>
+                    <td>${d.marca}</td>
+                    <td>${d.modelo}</td>
+                    <td>${d.year}</td>
+                    <td>${btnEdit}${btnDel}</td>
+                </tr>`;
+            });
+
+            document.getElementById("pageInfo").innerText = `Página ${page} de ${total}`;
+            document.getElementById("btnPrev").disabled = (page === 1);
+            document.getElementById("btnFirst").disabled = (page === 1);
+            document.getElementById("btnNext").disabled = (page === total);
+            document.getElementById("btnLast").disabled = (page === total);
+        }
+
+        // --- 🚩 NAVEGACIÓN ---
+        function changePage(step) {
+            const filtered = getFilteredData();
+            const total = totalPages(filtered.length);
+            if (page + step >= 1 && page + step <= total) {
+                page += step;
+                render();
+            }
+        }
+        function firstPage() { page = 1; render(); }
+        function lastPage() { page = totalPages(getFilteredData().length); render(); }
+
+        // --- MODAL LOGIC ---
+        function openModal(){ document.getElementById("modal").style.display="flex"; }
+        function closeModal(){ document.getElementById("modal").style.display="none"; clear(); }
+
+        function clear(){
+            document.getElementById("placas").value="";
+            document.getElementById("marca").value="";
+            document.getElementById("modelo").value="";
+            document.getElementById("year").value="";
+            document.getElementById("modalTitle").innerText = "Registrar Transporte";
+            editIndex = null;
+        }
+
+        function save(){
+            const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
+            const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
+
+            if(editIndex !== null && !puedeEditar) return alert("❌ Sin permiso para editar.");
+            if(editIndex === null && !puedeAgregar) return alert("❌ Sin permiso para registrar.");
+
+            const obj = {
+                placas: document.getElementById("placas").value.trim(),
+                marca: document.getElementById("marca").value.trim(),
+                modelo: document.getElementById("modelo").value.trim(),
+                year: parseInt(document.getElementById("year").value)
+            };
+
+            if(!obj.placas || !obj.marca || !obj.modelo || !obj.year) return alert("❌ Campos obligatorios");
+
+            if(editIndex !== null) data[editIndex] = obj;
+            else data.push(obj);
+
+            persist();
+            closeModal();
+            render();
+        }
+
+        function edit(i){
+            let d = data[i];
+            document.getElementById("placas").value = d.placas;
+            document.getElementById("marca").value = d.marca;
+            document.getElementById("modelo").value = d.modelo;
+            document.getElementById("year").value = d.year;
+            document.getElementById("modalTitle").innerText = "Editar Transporte";
+            editIndex = i;
+            openModal();
+        }
+
+        function del(i){
+            if(!(permisosModulo.bitAdministrador || permisosModulo.bitEliminar)) return alert("❌ Sin permiso.");
+            if(confirm("¿Seguro que deseas eliminar este transporte?")){
+                data.splice(i,1);
+                persist();
+                render();
+            }
+        }
+
+        // --- LISTENERS ---
+        document.getElementById("search").addEventListener("input", () => { page = 1; render(); });
+        document.getElementById("rows").addEventListener("change", (e) => { 
+            rows = parseInt(e.target.value); 
+            page = 1; 
+            render(); 
+        });
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            await cargarPermisos();
+            render();
+        });
+    </script>
 </body>
 </html>

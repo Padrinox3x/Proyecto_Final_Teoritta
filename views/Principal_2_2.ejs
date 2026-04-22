@@ -1,23 +1,21 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<title>CRUD Sucursales</title>
-<link rel="stylesheet" href="/css/Principal_1.1.css">
-<link rel="stylesheet" href="/css/breadcrums.css"> 
-<style>
-    /* Estilos para asegurar que la paginación se vea y funcione correctamente */
-    .pagination { margin-top: 15px; display: flex; gap: 10px; align-items: center; justify-content: center; }
-    .pagination button { padding: 5px 12px; cursor: pointer; border: 1px solid #ccc; background: #fff; border-radius: 4px; }
-    .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
-</style>
+    <meta charset="UTF-8">
+    <title>CRUD Sucursales</title>
+    <link rel="stylesheet" href="/css/Principal_1.1.css">
+    <link rel="stylesheet" href="/css/breadcrums.css"> 
+    <style>
+        .pagination { margin-top: 15px; display: flex; gap: 10px; align-items: center; justify-content: center; }
+        .pagination button { padding: 5px 12px; cursor: pointer; border: 1px solid #ccc; background: #fff; border-radius: 4px; }
+        .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
+    </style>
 </head>
 
 <body>
+    <%- include('partials/breadcrumb') %>
 
-<%- include('partials/breadcrumb') %>
-
-<div class="top-bar">
+    <div class="top-bar">
         <input type="text" id="search" placeholder="Buscar por nombre, dirección o ciudad...">
         
         <select id="rows">
@@ -25,232 +23,220 @@
             <option value="10" selected>10</option>
             <option value="15">15</option>
         </select>
-
         <button id="btnNuevo" class="btn-add" onclick="openModal()">+</button>
     </div>
 
-<table>
-<thead>
-<tr>
-    <th>Nombre</th>
-    <th>Dirección</th>
-    <th>Ciudad</th>
-    <th>Acciones</th>
-</tr>
-</thead>
-<tbody id="tableBody"></tbody>
-</table>
+    <table>
+        <thead>
+            <tr>
+                <th>Nombre</th>
+                <th>Dirección</th>
+                <th>Ciudad</th>
+                <th>Acciones</th>
+            </tr>
+        </thead>
+        <tbody id="tableBody"></tbody>
+    </table>
 
-<div class="pagination">
-    <button id="btnFirst" onclick="firstPage()">⏮</button>
-    <button id="btnPrev" onclick="prevPage()">◀</button>
-    <span id="pageInfo"></span>
-    <button id="btnNext" onclick="nextPage()">▶</button>
-    <button id="btnLast" onclick="lastPage()">⏭</button>
-</div>
+    <div class="pagination">
+        <button id="btnFirst" onclick="firstPage()">⏮</button>
+        <button id="btnPrev" onclick="changePage(-1)">Anterior</button>
+        <span id="pageInfo"></span>
+        <button id="btnNext" onclick="changePage(1)">Siguiente</button>
+        <button id="btnLast" onclick="lastPage()">⏭</button>
+    </div>
 
-<div class="modal" id="modal">
-    <div class="modal-content">
-        <h3 id="modalTitle">Registrar Sucursal</h3>
-        
-        <label>Nombre de la Sucursal</label>
-        <input id="nombre" placeholder="Ej. Norte Principal" 
-         maxlength="50" 
-               oninput="this.value = this.value.replace(/[0-9]/g, '')">
-        
-        <label>Dirección</label>
-        <input id="direccion" placeholder="Ej. Av. Siempre Viva 123"
-         maxlength="100" >
-        
-        <label>Ciudad</label>
-        <input id="ciudad" placeholder="Ej. CDMX" 
-         maxlength="50" 
-               oninput="this.value = this.value.replace(/[0-9]/g, '')">
-        
-        <div class="acciones-modal">
-            <button class="btn-save" onclick="save()">Guardar</button>
-            <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+    <div class="modal" id="modal">
+        <div class="modal-content">
+            <h3 id="modalTitle">Registrar Sucursal</h3>
+            
+            <label>Nombre de la Sucursal</label>
+            <input id="nombre" placeholder="Ej. Norte Principal" maxlength="50" 
+                   oninput="this.value = this.value.replace(/[0-9]/g, '')">
+            
+            <label>Dirección</label>
+            <input id="direccion" placeholder="Ej. Av. Siempre Viva 123" maxlength="100">
+            
+            <label>Ciudad</label>
+            <input id="ciudad" placeholder="Ej. CDMX" maxlength="50" 
+                   oninput="this.value = this.value.replace(/[0-9]/g, '')">
+            
+            <div class="acciones-modal">
+                <button class="btn-save" onclick="save()">Guardar</button>
+                <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
+            </div>
         </div>
     </div>
-</div>
 
-<script src="/js/breadcrums.js"></script> 
+    <script src="/js/breadcrums.js"></script> 
 
-<script>
-let data = JSON.parse(localStorage.getItem("sucursales")) || [];
-let page = 1;
-let rows = 10;
-let editIndex = null;
+    <script>
+        let data = JSON.parse(localStorage.getItem("sucursales")) || [];
+        let page = 1;
+        let rows = 10;
+        let editIndex = null;
 
-// --- 🛡️ ESTADO GLOBAL DE PERMISOS BLINDADO ---
-let permisosModulo = {
-    bitAgregar: 0, bitEditar: 0, bitConsulta: 0, bitEliminar: 0, bitDetalle: 0,
-    bitAdministrador: 0 
-};
+        // --- 🛡️ ESTADO GLOBAL DE PERMISOS ---
+        let permisosModulo = {
+            bitAgregar: 0, bitEditar: 0, bitConsulta: 0, bitEliminar: 0, bitDetalle: 0,
+            bitAdministrador: 0 
+        };
 
-// --- 🛡️ CARGAR PERMISOS (Principal_2_2) ---
-async function cargarPermisos() {
-    try {
-        const res = await fetch('/api/permisosPerfil/mis-permisos?modulo=Principal_2_2');
-        const json = await res.json();
-        
-        if (json) {
-            permisosModulo = json;
-            console.log("Permisos cargados para Sucursales:", permisosModulo);
-        }
-        
-        // Aplicar visibilidad del botón nuevo inmediatamente
-        const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
-        const btn = document.getElementById('btnNuevo');
-        if(btn) btn.style.display = puedeAgregar ? 'block' : 'none';
-
-    } catch (error) {
-        console.error("Error crítico cargando permisos de Sucursales:", error);
-        // Mantenemos permisos en 0 por seguridad ante errores de red
-    }
-}
-
-function persist(){
-    localStorage.setItem("sucursales", JSON.stringify(data));
-}
-
-function totalPages(filteredLength){
-    return Math.ceil(filteredLength / rows) || 1;
-}
-
-function getFilteredData(){
-    let search = document.getElementById("search").value.toLowerCase();
-    return data.filter(d =>
-        (d.nombre || "").toLowerCase().includes(search) ||
-        (d.direccion || "").toLowerCase().includes(search) ||
-        (d.ciudad || "").toLowerCase().includes(search)
-    );
-}
-
-function render(){
-    let tbody = document.getElementById("tableBody");
-    tbody.innerHTML = "";
-    let filtered = getFilteredData();
-    let total = totalPages(filtered.length);
-
-    if(page > total) page = total || 1;
-
-    let start = (page-1)*rows;
-    let paginated = filtered.slice(start, start+rows);
-
-    // Definimos constantes de permiso para el loop
-    const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
-    const puedeEliminar = permisosModulo.bitAdministrador || permisosModulo.bitEliminar;
-
-    paginated.forEach((d) => {
-        let realIndex = data.indexOf(d); 
-        
-        let botonesAccion = "";
-        if (puedeEditar) {
-            botonesAccion += `<button class="btn-edit" onclick="edit(${realIndex})">✏️</button> `;
-        }
-        if (puedeEliminar) {
-            botonesAccion += `<button class="btn-delete" onclick="del(${realIndex})">🗑</button>`;
-        }
-        if (!puedeEditar && !puedeEliminar) {
-            botonesAccion = '<span style="color:gray; font-size:11px;">Solo lectura</span>';
+        async function cargarPermisos() {
+            try {
+                // Fetch específico para Principal_2_2
+                const res = await fetch('/api/permisosPerfil/mis-permisos?modulo=Principal_2_2');
+                permisosModulo = await res.json();
+                
+                const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
+                const btn = document.getElementById('btnNuevo');
+                if(btn) btn.style.display = puedeAgregar ? 'block' : 'none';
+                
+            } catch (error) {
+                console.error("Error cargando permisos de Sucursales:", error);
+            }
         }
 
-        tbody.innerHTML += `
-        <tr>
-            <td>${d.nombre}</td>
-            <td>${d.direccion}</td>
-            <td>${d.ciudad}</td>
-            <td>${botonesAccion}</td>
-        </tr>`;
-    });
+        function persist(){
+            localStorage.setItem("sucursales", JSON.stringify(data));
+        }
 
-    // Actualizar paginación
-    document.getElementById("pageInfo").innerText = `Página ${page} de ${total}`;
-    document.getElementById("btnPrev").disabled = (page === 1);
-    document.getElementById("btnFirst").disabled = (page === 1);
-    document.getElementById("btnNext").disabled = (page === total);
-    document.getElementById("btnLast").disabled = (page === total);
-}
+        function totalPages(filteredLength){
+            return Math.ceil(filteredLength / rows) || 1;
+        }
 
-/* 🚩 NAVEGACIÓN */
-function firstPage(){ page = 1; render(); }
-function lastPage(){ page = totalPages(getFilteredData().length); render(); }
-function nextPage(){ if(page < totalPages(getFilteredData().length)){ page++; render(); } }
-function prevPage(){ if(page > 1){ page--; render(); } }
+        function getFilteredData(){
+            let search = document.getElementById("search").value.toLowerCase();
+            return data.filter(d =>
+                (d.nombre || "").toLowerCase().includes(search) ||
+                (d.direccion || "").toLowerCase().includes(search) ||
+                (d.ciudad || "").toLowerCase().includes(search)
+            );
+        }
 
-function openModal(){ document.getElementById("modal").style.display="flex"; }
-function closeModal(){ document.getElementById("modal").style.display="none"; clear(); }
+        function render(){
+            let tbody = document.getElementById("tableBody");
+            tbody.innerHTML = "";
+            let filtered = getFilteredData();
+            let total = totalPages(filtered.length);
 
-function clear(){
-    document.getElementById("nombre").value="";
-    document.getElementById("direccion").value="";
-    document.getElementById("ciudad").value="";
-    document.getElementById("modalTitle").innerText = "Registrar Sucursal";
-    editIndex = null;
-}
+            if(page > total) page = total || 1;
 
-/* 🛡️ GUARDAR PROTEGIDO */
-function save(){
-    const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
-    const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
+            let start = (page-1)*rows;
+            let paginated = filtered.slice(start, start + rows);
 
-    if(editIndex !== null && !puedeEditar) return alert("❌ No tienes permiso para editar.");
-    if(editIndex === null && !puedeAgregar) return alert("❌ No tienes permiso para registrar.");
+            const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
+            const puedeEliminar = permisosModulo.bitAdministrador || permisosModulo.bitEliminar;
 
-    const nombre = document.getElementById("nombre").value.trim();
-    const direccion = document.getElementById("direccion").value.trim();
-    const ciudad = document.getElementById("ciudad").value.trim();
+            paginated.forEach((d) => {
+                let realIndex = data.indexOf(d); 
+                
+                let btnEdit = puedeEditar 
+                    ? `<button class="btn-edit" onclick="edit(${realIndex})">✏️</button> ` 
+                    : "";
+                let btnDel = puedeEliminar 
+                    ? `<button class="btn-delete" onclick="del(${realIndex})">🗑</button>` 
+                    : "";
 
-    if(!nombre || !direccion || !ciudad){
-        alert("❌ Todos los campos son obligatorios.");
-        return;
-    }
+                if (!puedeEditar && !puedeEliminar) {
+                    btnEdit = '<span style="color:gray; font-size:11px;">Solo lectura</span>';
+                }
 
-    let obj = { nombre, direccion, ciudad };
+                tbody.innerHTML += `
+                <tr>
+                    <td>${d.nombre}</td>
+                    <td>${d.direccion}</td>
+                    <td>${d.ciudad}</td>
+                    <td>${btnEdit}${btnDel}</td>
+                </tr>`;
+            });
 
-    if(editIndex !== null) data[editIndex] = obj;
-    else data.push(obj);
+            document.getElementById("pageInfo").innerText = `Página ${page} de ${total}`;
+            document.getElementById("btnPrev").disabled = (page === 1);
+            document.getElementById("btnFirst").disabled = (page === 1);
+            document.getElementById("btnNext").disabled = (page === total);
+            document.getElementById("btnLast").disabled = (page === total);
+        }
 
-    persist();
-    closeModal();
-    render();
-}
+        // --- 🚩 NAVEGACIÓN (Homologada con Principal_1_1) ---
+        function changePage(step) {
+            const filtered = getFilteredData();
+            const total = totalPages(filtered.length);
+            const newPage = page + step;
+            if (newPage >= 1 && newPage <= total) {
+                page = newPage;
+                render();
+            }
+        }
+        function firstPage() { page = 1; render(); }
+        function lastPage() { page = totalPages(getFilteredData().length); render(); }
 
-function edit(i){
-    let d = data[i];
-    document.getElementById("nombre").value = d.nombre;
-    document.getElementById("direccion").value = d.direccion;
-    document.getElementById("ciudad").value = d.ciudad;
-    document.getElementById("modalTitle").innerText = "Editar Sucursal";
-    editIndex = i;
-    openModal();
-}
+        // --- MODAL LOGIC ---
+        function openModal(){ document.getElementById("modal").style.display="flex"; }
+        function closeModal(){ document.getElementById("modal").style.display="none"; clear(); }
 
-function del(i){
-    const puedeEliminar = permisosModulo.bitAdministrador || permisosModulo.bitEliminar;
-    if(!puedeEliminar) return alert("❌ No tienes permiso para eliminar.");
-    
-    if(confirm("¿Seguro que deseas eliminar esta sucursal?")){
-        data.splice(i,1);
-        persist();
-        render();
-    }
-}
+        function clear(){
+            document.getElementById("nombre").value="";
+            document.getElementById("direccion").value="";
+            document.getElementById("ciudad").value="";
+            document.getElementById("modalTitle").innerText = "Registrar Sucursal";
+            editIndex = null;
+        }
 
-// Listeners
-document.getElementById("search").addEventListener("input", () => { page = 1; render(); });
-document.getElementById("rows").addEventListener("change", (e) => { 
-    rows = parseInt(e.target.value); 
-    page = 1; 
-    render(); 
-});
+        function save(){
+            const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
+            const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
 
-// --- 🛡️ INICIALIZACIÓN ---
-document.addEventListener("DOMContentLoaded", async () => {
-    await cargarPermisos(); 
-    render(); 
-});
-</script>
+            if(editIndex !== null && !puedeEditar) return alert("❌ Sin permiso para editar.");
+            if(editIndex === null && !puedeAgregar) return alert("❌ Sin permiso para registrar.");
+
+            const nombre = document.getElementById("nombre").value.trim();
+            const direccion = document.getElementById("direccion").value.trim();
+            const ciudad = document.getElementById("ciudad").value.trim();
+
+            if(!nombre || !direccion || !ciudad) return alert("❌ Todos los campos son obligatorios.");
+
+            let obj = { nombre, direccion, ciudad };
+
+            if(editIndex !== null) data[editIndex] = obj;
+            else data.push(obj);
+
+            persist();
+            closeModal();
+            render();
+        }
+
+        function edit(i){
+            let d = data[i];
+            document.getElementById("nombre").value = d.nombre;
+            document.getElementById("direccion").value = d.direccion;
+            document.getElementById("ciudad").value = d.ciudad;
+            document.getElementById("modalTitle").innerText = "Editar Sucursal";
+            editIndex = i;
+            openModal();
+        }
+
+        function del(i){
+            if(!(permisosModulo.bitAdministrador || permisosModulo.bitEliminar)) return alert("❌ Sin permiso.");
+            if(confirm("¿Seguro que deseas eliminar esta sucursal?")){
+                data.splice(i,1);
+                persist();
+                render();
+            }
+        }
+
+        // --- LISTENERS ---
+        document.getElementById("search").addEventListener("input", () => { page = 1; render(); });
+        document.getElementById("rows").addEventListener("change", (e) => { 
+            rows = parseInt(e.target.value); 
+            page = 1; 
+            render(); 
+        });
+
+        document.addEventListener("DOMContentLoaded", async () => {
+            await cargarPermisos();
+            render();
+        });
+    </script>
 </body>
 </html>
