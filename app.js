@@ -115,46 +115,44 @@ app.get('/Principal_2_2', isAuthenticated, (req, res) => res.render('Principal_2
 ======================= */
 app.post('/api/usuario/upload-avatar', isAuthenticated, upload.single('imagen'), async (req, res) => {
     try {
-        if (!req.file) {
-            return res.status(400).json({ error: 'No se recibió ninguna imagen' });
-        }
-
-        // Usamos el ID de la sesión
-        const usuarioId = req.session.user.idUsuario; 
-        
-        // Convertir a Base64 para Cloudinary
+        const usuarioId = req.session.user.idUsuario;
         const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
 
-        // Subir a Cloudinary
+        // 1. Subir a Cloudinary
         const result = await cloudinary.uploader.upload(base64Image, {
             folder: 'perfiles_usuarios',
             public_id: `user_${usuarioId}`,
             overwrite: true
         });
 
-        // ACTUALIZACIÓN SQL: Usando 'Modulo_Usuario' e 'idUsuario'
+        // 2. Actualizar SQL
         const pool = await conectarDB();
         await pool.request()
-        .input('idUsuarioParam', sql.Int, usuarioId) // 'idUsuario' según tu captura
-        .input('FotoUrlParam', sql.NVarChar, result.secure_url)
-         .query(`
-        UPDATE Modulo_Usuario 
-        SET FotoUrl = @FotoUrlParam 
-        WHERE idUsuario = @idUsuarioParam
-    `); // Tabla 'Modulo_Usuario'
+            .input('id', sql.Int, usuarioId)
+            .input('url', sql.NVarChar, result.secure_url)
+            .query(`UPDATE Modulo_Usuario SET FotoUrl = @url WHERE idUsuario = @id`);
 
-        // Actualizamos la sesión para que el cambio se vea reflejado
-        req.session.user.FotoUrl = result.secure_url;
+        // 3. 🔥 ACTUALIZACIÓN INSTANTÁNEA: Refrescamos los datos en la sesión
+        // Consultamos de nuevo para traer TODO (incluyendo el nuevo FotoUrl)
+        const userQuery = await pool.request()
+            .input('id', sql.Int, usuarioId)
+            .query(`
+                SELECT u.idUsuario, u.strNombreUsuario, u.strCorreo, u.strCelular, u.FotoUrl, p.strNombrePerfil
+                FROM Modulo_Usuario u
+                INNER JOIN Modulo_Perfil p ON u.Perfil = p.idPerfil
+                WHERE u.idUsuario = @id
+            `);
 
-        res.json({ 
-            success: true, 
-            url: result.secure_url,
-            message: '¡Foto de perfil actualizada!' 
+        // Sobrescribimos la sesión con los datos frescos de la BD
+        req.session.user = userQuery.recordset[0];
+
+        // Guardamos la sesión antes de responder al cliente
+        req.session.save(() => {
+            res.json({ success: true, url: result.secure_url });
         });
 
     } catch (error) {
-        console.error('Error detallado:', error);
-        res.status(500).json({ error: 'Error en el servidor: ' + error.message });
+        res.status(500).json({ error: error.message });
     }
 });
 

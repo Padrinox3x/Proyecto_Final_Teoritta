@@ -17,6 +17,9 @@ router.post('/login', async (req, res) => {
                  SELECT 
                  u.idUsuario,
                  u.strNombreUsuario,
+                 u.strCorreo,   
+                 u.strCelular,  
+                 u.FotoUrl,     
                  u.Perfil,
                  p.strNombrePerfil,
                  p.bitAdministrador
