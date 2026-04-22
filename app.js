@@ -77,6 +77,7 @@ app.use('/api/perfil', perfilRoutes);
 app.use('/api/usuario', usuarioRoutes);
 app.use('/api/permisosPerfil', permisosRoutes);
 
+
 // 🔐 AUTH
 app.use('/auth', authRoutes);
 
@@ -109,7 +110,7 @@ app.get('/Principal_1_1', isAuthenticated, (req, res) => res.render('Principal_1
 app.get('/Principal_1_2', isAuthenticated, (req, res) => res.render('Principal_1_2'));
 app.get('/Principal_2_1', isAuthenticated, (req, res) => res.render('Principal_2_1'));
 app.get('/Principal_2_2', isAuthenticated, (req, res) => res.render('Principal_2_2'));
-
+app.get('/principal', isAuthenticated, (req, res) => res.render('principal'));
 /* =======================
     GESTIÓN DE AVATAR (Cloudinary)
 ======================= */
