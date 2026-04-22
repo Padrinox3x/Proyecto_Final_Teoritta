@@ -115,21 +115,36 @@ app.get('/Principal_2_2', isAuthenticated, (req, res) => res.render('Principal_2
 ======================= */
 app.post('/api/usuario/upload-avatar', isAuthenticated, upload.single('imagen'), async (req, res) => {
     try {
+        // 1. Verificar si Multer recibió el archivo
         if (!req.file) {
-            return res.status(400).json({ error: '❌ No se recibió ninguna imagen' });
+            console.log("❌ Multer no recibió ningún archivo en el campo 'imagen'");
+            return res.status(400).json({ error: 'No se recibió ninguna imagen' });
         }
 
-        const usuarioId = req.session.user.idUsuario; 
+        // 2. Verificar la sesión y el ID
+        // Cambia .idUsuario por .id o como sea que lo guardes en el login
+        const usuarioId = req.session.user.idUsuario || req.session.user.id; 
+        
+        if (!usuarioId) {
+            console.log("❌ No se encontró el ID del usuario en la sesión:", req.session.user);
+            return res.status(401).json({ error: 'Sesión inválida o ID no encontrado' });
+        }
+
+        console.log(`--- Iniciando subida para usuario ${usuarioId} ---`);
+
+        // 3. Convertir a Base64
         const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
 
-        // Subida a Cloudinary
+        // 4. Subir a Cloudinary (Usa tu config/cloudinary.js)
         const result = await cloudinary.uploader.upload(base64Image, {
             folder: 'perfiles_usuarios',
             public_id: `user_${usuarioId}`,
             overwrite: true
         });
 
-        // Actualizar SQL Server
+        console.log("✅ Subido a Cloudinary:", result.secure_url);
+
+        // 5. Actualizar en SQL Server
         const pool = await conectarDB();
         await pool.request()
             .input('IdUsuario', sql.Int, usuarioId)
@@ -140,7 +155,7 @@ app.post('/api/usuario/upload-avatar', isAuthenticated, upload.single('imagen'),
                 WHERE IdUsuario = @IdUsuario
             `);
 
-        // Sincronizar sesión
+        // 6. ACTUALIZAR SESIÓN (Importante para el breadcrumb)
         req.session.user.FotoUrl = result.secure_url;
 
         res.json({ 
@@ -150,8 +165,9 @@ app.post('/api/usuario/upload-avatar', isAuthenticated, upload.single('imagen'),
         });
 
     } catch (error) {
-        console.error('🔥 Error al actualizar avatar:', error);
-        res.status(500).json({ error: 'Error interno del servidor' });
+        // ESTO ES LO QUE DEBES REVISAR EN EL LOG DE RENDER SI FALLA
+        console.error('🔥 ERROR DETALLADO EN UPLOAD:', error);
+        res.status(500).json({ error: 'Error interno del servidor: ' + error.message });
     }
 });
 
