@@ -6,30 +6,51 @@
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* FONDO */
+/* FONDO CON IMAGEN */
 body{
     height:100vh;
     display:flex;
-    justify-content:center;
+    justify-content:flex-start; /* Cambiado de center a flex-start para alinear a la izquierda */
     align-items:center;
-    background: linear-gradient(135deg, #1d2671, #c33764);
+    background-image: url('/img/sesion.png'); /* Ruta de tu imagen */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    position: relative;
 }
 
-/* CONTENEDOR */
+/* Capa overlay para mejorar legibilidad (opcional) */
+body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5); /* Oscurece ligeramente el fondo */
+    z-index: 0;
+}
+
+/* CONTENEDOR - Alineado a la izquierda */
 .container{
-    background:#fff;
-    padding:40px;
-    border-radius:12px;
-    width:320px;
-    box-shadow:0 10px 25px rgba(0,0,0,0.3);
-    animation:fadeIn 0.6s ease;
+    background: rgba(255, 255, 255, 0.95); /* Blanco semitransparente */
+    padding: 40px;
+    border-radius: 12px;
+    width: 380px;
+    box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+    animation: fadeIn 0.6s ease;
+    margin-left: 8%; /* Espaciado desde la izquierda */
+    position: relative;
+    z-index: 1;
+    backdrop-filter: blur(2px); /* Efecto vidrio esmerilado */
 }
 
 /* TITULO */
 .container h1{
     text-align:center;
     margin-bottom:25px;
-    color:#333;
+    color: #1d2671;
+    font-weight: 600;
 }
 
 /* FORM */
@@ -45,10 +66,11 @@ body{
 
 .form-group input{
     width:100%;
-    padding:10px;
-    border:1px solid #ccc;
-    border-radius:6px;
+    padding:12px;
+    border:1px solid #ddd;
+    border-radius:8px;
     transition:0.3s;
+    font-size:14px;
 }
 
 .form-group input:focus{
@@ -62,40 +84,98 @@ body{
     display:flex;
     justify-content:center;
     margin-bottom:15px;
+    transform: scale(0.95); /* Pequeño ajuste para que quepa mejor */
 }
 
 /* BOTON */
 button{
-    padding:10px;
+    padding:12px;
     border:none;
-    border-radius:6px;
-    background:#1d2671;
+    border-radius:8px;
+    background: linear-gradient(135deg, #1d2671, #c33764);
     color:white;
     font-size:16px;
+    font-weight:600;
     cursor:pointer;
     transition:0.3s;
+    margin-top:5px;
 }
 
 button:hover{
-    background:#c33764;
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Mensaje de error del captcha */
+.captcha-error {
+    color: #dc2626;
+    font-size: 12px;
+    text-align: center;
+    margin-top: 5px;
+    display: none;
+}
+
+/* Loading state */
+.loading {
+    opacity: 0.6;
+    pointer-events: none;
 }
 
 /* ANIMACION */
 @keyframes fadeIn{
     from{
         opacity:0;
-        transform:translateY(-20px);
+        transform:translateX(-30px); /* Cambiado de translateY a translateX para efecto lateral */
     }
     to{
         opacity:1;
-        transform:translateY(0);
+        transform:translateX(0);
     }
 }
 
 /* RESPONSIVE */
-@media (max-width:400px){
-    .container{
-        width:90%;
-        padding:25px;
+@media (max-width: 768px) {
+    body {
+        justify-content: center; /* Centrado en móviles */
+    }
+    
+    .container {
+        width: 90%;
+        margin-left: 0;
+        padding: 30px 20px;
+    }
+    
+    .captcha {
+        transform: scale(0.85);
+    }
+}
+
+@media (max-width: 480px) {
+    .container {
+        width: 95%;
+        padding: 25px 15px;
+    }
+    
+    .captcha {
+        transform: scale(0.8);
+    }
+    
+    .container h1 {
+        font-size: 24px;
+    }
+    
+    button {
+        padding: 10px;
+        font-size: 14px;
     }
 }
