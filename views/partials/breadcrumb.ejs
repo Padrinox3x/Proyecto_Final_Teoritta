@@ -1,95 +1,43 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <link rel="stylesheet" href="/css/breadcrums.css">
-</head>
-<body>
-
-<!-- BARRA SUPERIOR (BREADCRUMB) -->
-<div class="breadcrumb-container">
-    <div class="breadcrumb">
-        <a href="/principal">Inicio</a>
-        <% if (locals.breadcrumb && breadcrumb.length > 0) { %>
-            <% breadcrumb.forEach((item, index) => { %>
-                <span class="separator">/</span>
-                <% if (index === breadcrumb.length - 1) { %>
-                    <span class="current"><%= item %></span>
-                <% } else { %>
-                    <a href="#"><%= item %></a>
-                <% } %>
-            <% }); %>
-        <% } %>
-    </div>
-</div>
-
-<!-- MENÚ LATERAL (SIDEBAR) -->
 <nav class="menu">
-    <ul>
-        <li>
-            <a href="#">Seguridad</a>
-            <ul class="submenu">
-                <li data-menu="Usuario"><a href="/usuario">Usuario</a></li>
-                <li data-menu="Modulo"><a href="/modulo">Módulo</a></li>
-                <li data-menu="Perfil"><a href="/perfil">Perfil</a></li>
-                <li data-menu="Permisos"><a href="/permisos">Permisos</a></li>
-            </ul>
-        </li>
+  <ul>
 
-        <li>
-            <a href="#">Principal 1</a>
-            <ul class="submenu">
-                <li data-menu="Principal_1_1"><a href="/Principal_1_1">Principal 1.1</a></li>
-                <li data-menu="Principal_1_2"><a href="/Principal_1_2">Principal 1.2</a></li>
-            </ul>
-        </li>
+    <li>
+      <a href="#">Seguridad</a>
+      <ul class="submenu">
+        <li data-menu="Usuario"><a href="/usuario">Usuario</a></li>
+        <li data-menu="Modulo"><a href="/modulo">Módulo</a></li>
+        <li data-menu="Perfil"><a href="/perfil">Perfil</a></li>
+        <li data-menu="Permisos"><a href="/permisos">Permisos</a></li>
+      </ul>
+    </li>
 
-        <li>
-            <a href="#">Principal 2</a>
-            <ul class="submenu">
-                <li data-menu="Principal_2_1"><a href="/Principal_2_1">Principal 2.1</a></li>
-                <li data-menu="Principal_2_2"><a href="/Principal_2_2">Principal 2.2</a></li>
-            </ul>
-        </li>
+    <li>
+      <a href="#">Principal 1</a>
+      <ul class="submenu">
+        <li data-menu="Principal_1_1"><a href="/Principal_1_1">Principal 1.1</a></li>
+        <li data-menu="Principal_1_2"><a href="/Principal_1_2">Principal 1.2</a></li>
+      </ul>
+    </li>
 
-        <li class="spacer"></li>
+    <li>
+      <a href="#">Principal 2</a>
+      <ul class="submenu">
+        <li data-menu="Principal_2_1"><a href="/Principal_2_1">Principal 2.1</a></li>
+        <li data-menu="Principal_2_2"><a href="/Principal_2_2">Principal 2.2</a></li>
+      </ul>
+    </li>
 
-        <li class="user-profile-item">
-            <div id="user-avatar" class="avatar-circle">
-                <% if (locals.user && user.FotoUrl) { %>
-                    <img src="<%= user.FotoUrl %>" id="avatar-img" alt="User">
-                <% } else { %>
-                    <img src="/img/default-avatar.png" id="avatar-img" alt="User">
-                <% } %>
-            </div>
-        </li>
-    </ul>
+    <li class="spacer"></li>
+
+    <li class="user-profile-item">
+      <div id="user-avatar" class="avatar-circle">
+        <% if (locals.user && user.FotoUrl) { %>
+          <img src="<%= user.FotoUrl %>" id="avatar-img" alt="User">
+        <% } else { %>
+          <img src="/img/default-avatar.png" id="avatar-img" alt="User">
+        <% } %>
+      </div>
+    </li>
+
+  </ul>
 </nav>
-
-<!-- SIDEBAR LATERAL DE USUARIO (PANEL QUE SE DESPLIEGA) -->
-<div id="user-sidebar" class="user-sidebar">
-    <div class="sidebar-header">
-        <button id="close-sidebar" class="close-sidebar-btn">&times;</button>
-        <div class="sidebar-avatar">
-            <img src="/img/default-avatar.png" id="sidebar-avatar-img" alt="Avatar">
-        </div>
-        <h3>Mi Perfil</h3>
-    </div>
-    <div class="sidebar-content">
-        <div class="profile-info">
-            <p><strong>Nombre:</strong> <span id="profile-nombre">---</span></p>
-            <p><strong>Perfil:</strong> <span id="profile-perfil">---</span></p>
-            <p><strong>Email:</strong> <span id="profile-email">---</span></p>
-            <p><strong>Teléfono:</strong> <span id="profile-telefono">---</span></p>
-        </div>
-        <div class="sidebar-actions">
-            <button id="btn-cerrar-sesion" class="logout-btn">Cerrar Sesión</button>
-        </div>
-    </div>
-</div>
-
-<!-- OVERLAY PARA CERRAR EL SIDEBAR -->
-<div id="sidebar-overlay" class="sidebar-overlay"></div>
-
-<script src="/js/breadcrums.js"></script>
-</body>
-</html>
