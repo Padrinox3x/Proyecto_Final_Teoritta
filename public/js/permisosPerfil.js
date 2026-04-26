@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         });
     }
 
-    btnGuardar.addEventListener('click', async () => {
+   btnGuardar.addEventListener('click', async () => {
     const idPerfil = perfilSelect.value;
     if (!idPerfil) return alert('Selecciona un perfil primero');
     if (!confirm('¿Desea actualizar los privilegios para este perfil?')) return;
@@ -116,6 +116,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         alert('❌ Error de conexión');
     }
 });
+
+    perfilSelect.addEventListener('change', () => {
+        const id = perfilSelect.value;
+        if (id) cargarPermisos(id);
+        else tabla.innerHTML = '';
+    });
+
     // --- INICIALIZACIÓN ---
     await cargarPermisosDeUsuario(); 
     cargarPerfiles();
