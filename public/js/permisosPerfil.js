@@ -83,37 +83,39 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     btnGuardar.addEventListener('click', async () => {
-        const idPerfil = perfilSelect.value;
-        if (!idPerfil) return alert('Selecciona un perfil primero');
-        if (!confirm('¿Desea actualizar los privilegios para este perfil?')) return;
+    const idPerfil = perfilSelect.value;
+    if (!idPerfil) return alert('Selecciona un perfil primero');
+    if (!confirm('¿Desea actualizar los privilegios para este perfil?')) return;
 
-        try {
-            const res = await fetch('/api/permisosPerfil', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    Perfil: parseInt(idPerfil),
-                    permisos: permisos
-                })
-            });
-            const result = await res.json();
-            if (result.ok) {
-                alert('✅ Matriz de permisos actualizada');
-                cargarPermisos(idPerfil);
-            } else {
-                alert('❌ Error: ' + (result.error || 'Desconocido'));
-            }
-        } catch (error) {
-            alert('❌ Error de conexión');
+    try {
+        const res = await fetch('/api/permisosPerfil', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                Perfil: parseInt(idPerfil),
+                permisos: permisos
+            })
+        });
+        const result = await res.json();
+        if (result.ok) {
+            alert('✅ Matriz de permisos actualizada');
+            cargarPermisos(idPerfil);
+            
+            // 🆕 DISPARAR EVENTO GLOBAL
+            window.dispatchEvent(new CustomEvent('permisosActualizados', {
+                detail: { 
+                    idPerfil: parseInt(idPerfil),
+                    timestamp: Date.now()
+                }
+            }));
+            
+        } else {
+            alert('❌ Error: ' + (result.error || 'Desconocido'));
         }
-    });
-
-    perfilSelect.addEventListener('change', () => {
-        const id = perfilSelect.value;
-        if (id) cargarPermisos(id);
-        else tabla.innerHTML = '';
-    });
-
+    } catch (error) {
+        alert('❌ Error de conexión');
+    }
+});
     // --- INICIALIZACIÓN ---
     await cargarPermisosDeUsuario(); 
     cargarPerfiles();

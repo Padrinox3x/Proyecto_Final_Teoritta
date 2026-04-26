@@ -114,6 +114,7 @@ async function cargarPermisos() {
         if (res.ok) {
             const result = await res.json();
             if (result) permisosModulo = result;
+            console.log("Permisos cargados:", permisosModulo);
         } else {
             console.warn("Sin permisos en BD → modo lectura");
         }
@@ -122,185 +123,77 @@ async function cargarPermisos() {
         console.error("Error permisos:", error);
     }
 
-    // ❌ YA NO BLOQUEAMOS ACCESO
+    // Actualizar UI según permisos
+    actualizarUIporPermisos();
+}
 
-    // ✔ SOLO CONTROLAMOS BOTÓN
+// 🆕 Función separada para actualizar la UI
+function actualizarUIporPermisos() {
     const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
     const btn = document.getElementById('btnNuevo');
     if(btn) btn.style.display = puedeAgregar ? 'block' : 'none';
-
-    return true;
-}
-
-// =========================
-// STORAGE
-// =========================
-function persist(){
-    localStorage.setItem("empleados_sucursal", JSON.stringify(data));
-}
-
-// =========================
-// FILTRO
-// =========================
-function getFilteredData(){
-    const search = (document.getElementById("search").value || "").toLowerCase();
-
-    return data.filter(d =>
-        (d.nombreProveedor || "").toLowerCase().includes(search) ||
-        (d.apellidosProveedor || "").toLowerCase().includes(search) ||
-        (d.correo || "").toLowerCase().includes(search) ||
-        (d.telefono || "").toString().includes(search)
-    );
-}
-
-// =========================
-// RENDER
-// =========================
-function render(){
-
-    const tbody = document.getElementById("tableBody");
-    tbody.innerHTML = "";
-
-    const filtered = getFilteredData();
-    const total = Math.ceil(filtered.length / rows) || 1;
-
-    if(page > total) page = total;
-
-    const start = (page - 1) * rows;
-    const paginated = filtered.slice(start, start + rows);
-
-    paginated.forEach((d) => {
-
-        const realIndex = data.indexOf(d);
-
-        const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
-        const puedeEliminar = permisosModulo.bitAdministrador || permisosModulo.bitEliminar;
-
-        let acciones = "";
-
-        if (puedeEditar) {
-            acciones += `<button onclick="edit(${realIndex})">✏️</button> `;
-        }
-
-        if (puedeEliminar) {
-            acciones += `<button onclick="del(${realIndex})">🗑</button>`;
-        }
-
-        if (!acciones) {
-            acciones = `<span style="color:gray;">Solo lectura</span>`;
-        }
-
-        tbody.innerHTML += `
-        <tr>
-            <td>${d.nombreProveedor || ''}</td>
-            <td>${d.apellidosProveedor || ''}</td>
-            <td>${d.telefono || ''}</td>
-            <td>${d.correo || ''}</td>
-            <td>${acciones}</td>
-        </tr>`;
-    });
-
-    document.getElementById("pageInfo").innerText = `Página ${page} de ${total}`;
-}
-
-// =========================
-// PAGINACIÓN
-// =========================
-function firstPage(){ page=1; render(); }
-function prevPage(){ if(page>1){ page--; render(); } }
-function nextPage(){ 
-    let total = Math.ceil(getFilteredData().length / rows) || 1;
-    if(page<total){ page++; render(); } 
-}
-function lastPage(){ page = Math.ceil(getFilteredData().length / rows) || 1; render(); }
-
-// =========================
-// MODAL
-// =========================
-function openModal(){
-    if(!(permisosModulo.bitAdministrador || permisosModulo.bitAgregar))
-        return alert("❌ Sin permiso");
-
-    document.getElementById("modal").style.display = "flex";
-}
-
-function closeModal(){
-    document.getElementById("modal").style.display = "none";
-    document.getElementById("nombreProveedor").value = "";
-    document.getElementById("ApellidosProveedor").value = "";
-    document.getElementById("Correo").value = "";
-    document.getElementById("Telefono").value = "";
-    editIndex = null;
-}
-
-// =========================
-// CRUD
-// =========================
-function save(){
-
-    const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
-    const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
-
-    if(editIndex !== null && !puedeEditar) return alert("❌ Sin permiso editar");
-    if(editIndex === null && !puedeAgregar) return alert("❌ Sin permiso crear");
-
-    const nombre = document.getElementById("nombreProveedor").value.trim();
-    const apellidos = document.getElementById("ApellidosProveedor").value.trim();
-
-    if(!nombre || !apellidos) return alert("Campos obligatorios");
-
-    const obj = {
-        nombreProveedor: nombre,
-        apellidosProveedor: apellidos,
-        correo: document.getElementById("Correo").value.trim(),
-        telefono: document.getElementById("Telefono").value.trim()
-    };
-
-    if(editIndex !== null) data[editIndex] = obj;
-    else data.push(obj);
-
-    persist();
-    closeModal();
+    
+    // Re-renderizar la tabla para que los botones de editar/eliminar se actualicen
     render();
 }
 
-function edit(i){
-    if(!(permisosModulo.bitAdministrador || permisosModulo.bitEditar))
-        return alert("❌ Sin permiso");
-
-    editIndex = i;
-    const d = data[i];
-
-    document.getElementById("nombreProveedor").value = d.nombreProveedor;
-    document.getElementById("ApellidosProveedor").value = d.apellidosProveedor;
-    document.getElementById("Correo").value = d.correo;
-    document.getElementById("Telefono").value = d.telefono;
-
-    openModal();
+// 🆕 Escuchar cambios globales de permisos
+function escucharCambiosPermisos() {
+    window.addEventListener('permisosActualizados', async (event) => {
+        console.log('🔄 Permisos actualizados, recargando...', event.detail);
+        
+        // Recargar permisos desde el servidor
+        await cargarPermisos();
+        
+        // Mostrar notificación opcional
+        mostrarNotificacion('Los permisos han sido actualizados', 'info');
+    });
 }
 
-function del(i){
-    if(!(permisosModulo.bitAdministrador || permisosModulo.bitEliminar))
-        return alert("❌ Sin permiso");
+// 🆕 Notificación visual (opcional pero recomendada)
+function mostrarNotificacion(mensaje, tipo = 'info') {
+    // Crear elemento de notificación flotante
+    const notif = document.createElement('div');
+    notif.textContent = mensaje;
+    notif.style.cssText = `
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: ${tipo === 'error' ? '#dc2626' : '#10b981'};
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        z-index: 10000;
+        animation: slideIn 0.3s ease;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    `;
+    
+    document.body.appendChild(notif);
+    
+    setTimeout(() => {
+        notif.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => notif.remove(), 300);
+    }, 3000);
+}
 
-    if(confirm("¿Eliminar?")){
-        data.splice(i,1);
-        persist();
-        render();
+// Agregar estilos para las animaciones (poner en el <style>)
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
     }
-}
+    @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
+    }
+`;
+document.head.appendChild(style);
 
-// =========================
-// EVENTOS
-// =========================
-document.getElementById("search").addEventListener("input", ()=>{ page=1; render(); });
-document.getElementById("rows").addEventListener("change",(e)=>{ rows=parseInt(e.target.value); page=1; render(); });
-
-// =========================
-// INIT
-// =========================
+// Modificar el DOMContentLoaded
 document.addEventListener("DOMContentLoaded", async () => {
     await cargarPermisos();
+    escucharCambiosPermisos(); // 🆕 Activar listener
     render();
 });
 </script>
