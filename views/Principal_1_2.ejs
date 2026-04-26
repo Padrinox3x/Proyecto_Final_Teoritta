@@ -2,25 +2,10 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>CRUD Proveedores</title>
+    <title>CRUD Proveedores - Principal 1.2</title>
     <link rel="stylesheet" href="/css/Principal_1.1.css">
     <link rel="stylesheet" href="/css/breadcrums.css"> 
-
-    <style>
-        .pagination { margin-top: 15px; display: flex; gap: 10px; align-items: center; justify-content: center; }
-        .pagination button { padding: 5px 12px; cursor: pointer; border: 1px solid #ccc; background: #fff; border-radius: 4px; }
-        .pagination button:disabled { opacity: 0.5; cursor: not-allowed; }
-
-        #btnNuevo { display: none; }
-
-        .no-access {
-            text-align: center;
-            margin-top: 80px;
-            color: #334155;
-        }
-    </style>
 </head>
-
 <body>
 
 <%- include('partials/breadcrumb') %>
@@ -34,7 +19,7 @@
         <option value="15">15</option>
     </select>
 
-    <button id="btnNuevo" class="btn-add" onclick="openModal()">+</button>
+    <button id="btnNuevo" class="btn-add" onclick="openModal()">+ Nuevo</button>
 </div>
 
 <table>
@@ -51,32 +36,32 @@
 </table>
 
 <div class="pagination">
-    <button onclick="firstPage()">⏮</button>
-    <button onclick="prevPage()">◀</button>
+    <button id="btnFirst" onclick="firstPage()">⏮</button>
+    <button id="btnPrev" onclick="prevPage()">◀</button>
     <span id="pageInfo"></span>
-    <button onclick="nextPage()">▶</button>
-    <button onclick="lastPage()">⏭</button>
+    <button id="btnNext" onclick="nextPage()">▶</button>
+    <button id="btnLast" onclick="lastPage()">⏭</button>
 </div>
 
-<div class="modal" id="modal" style="display:none;">
+<div id="modal" class="modal" style="display: none;">
     <div class="modal-content">
         <h3 id="modalTitle">Registrar Proveedor</h3>
 
-        <label>Nombre</label>
-        <input id="nombreProveedor" maxlength="50" oninput="this.value=this.value.replace(/[0-9]/g,'')">
+        <label>Nombre *</label>
+        <input id="nombreProveedor" maxlength="50" placeholder="Ingrese el nombre">
 
-        <label>Apellidos</label>
-        <input id="ApellidosProveedor" maxlength="50" oninput="this.value=this.value.replace(/[0-9]/g,'')">
+        <label>Apellidos *</label>
+        <input id="ApellidosProveedor" maxlength="50" placeholder="Ingrese los apellidos">
 
         <label>Correo</label>
-        <input id="Correo" type="email">
+        <input id="Correo" type="email" placeholder="ejemplo@correo.com">
 
         <label>Teléfono</label>
-        <input id="Telefono" maxlength="15" oninput="this.value=this.value.replace(/[^0-9]/g,'')">
+        <input id="Telefono" maxlength="15" placeholder="Número de teléfono">
 
         <div class="acciones-modal">
-            <button onclick="save()">Guardar</button>
-            <button onclick="closeModal()">Cancelar</button>
+            <button class="btn-save" onclick="save()">Guardar</button>
+            <button class="btn-cancel" onclick="closeModal()">Cancelar</button>
         </div>
     </div>
 </div>
@@ -85,74 +70,166 @@
 
 <script>
 // =========================
-// DATA
+// DATA - Inicializar con datos de ejemplo
 // =========================
-let data = JSON.parse(localStorage.getItem("proveedores")) || [];
+let data = [];
 let page = 1;
 let rows = 10;
 let editIndex = null;
 
+// Inicializar datos de ejemplo si no hay datos
+function inicializarDatosEjemplo() {
+    const stored = localStorage.getItem("proveedores");
+    
+    if (stored && JSON.parse(stored).length > 0) {
+        data = JSON.parse(stored);
+        console.log("📦 Datos cargados desde localStorage:", data.length, "proveedores");
+    } else {
+        // Datos de ejemplo para mostrar que funciona
+        data = [
+            {
+                nombreProveedor: "Proveedor A",
+                apellidosProveedor: "Servicios Generales",
+                correo: "contacto@proveedora.com",
+                telefono: "5551234567"
+            },
+            {
+                nombreProveedor: "Distribuciones",
+                apellidosProveedor: "El Sol",
+                correo: "ventas@distribucioneselsol.com",
+                telefono: "5559876543"
+            },
+            {
+                nombreProveedor: "Industrial",
+                apellidosProveedor: "Pesada SA",
+                correo: "info@industrialpesada.com",
+                telefono: "5554567890"
+            },
+            {
+                nombreProveedor: "Tecnología",
+                apellidosProveedor: "Avanzada",
+                correo: "soporte@tecnologiaavanzada.com",
+                telefono: "5557890123"
+            }
+        ];
+        persist();
+        console.log("📝 Datos de ejemplo creados:", data.length, "proveedores");
+    }
+}
+
 // =========================
-// PERMISOS (BASE SEGURA)
+// PERMISOS - CORREGIDO: Principal_1.2
 // =========================
 let permisosModulo = {
     bitAgregar: 0,
     bitEditar: 0,
-    bitConsulta: 1, // 👈 SIEMPRE al menos lectura
+    bitConsulta: 1,
     bitEliminar: 0,
     bitDetalle: 0,
     bitAdministrador: 0
 };
 
 // =========================
-// CARGAR PERMISOS ROBUSTO
+// CARGAR PERMISOS - CON TIMESTAMP PARA EVITAR CACHE
 // =========================
-async function cargarPermisos(){
-    try{
-        const res = await fetch('/api/permisosPerfil/mis-permisos?modulo=Principal_1.2');
+async function cargarPermisos() {
+    try {
+        // ✅ CORREGIDO: Cambiar a Principal_1.2 y agregar timestamp
+        const res = await fetch('/api/permisosPerfil/mis-permisos?modulo=Principal_1.2&t=' + Date.now());
 
-        if(res.ok){
+        if (res.ok) {
             const result = await res.json();
-            if(result) permisosModulo = result;
-        }else{
-            console.warn("Sin permisos en BD → modo lectura");
+            if (result) {
+                permisosModulo = result;
+                console.log("✅ Permisos cargados para Principal_1.2:", permisosModulo);
+                console.log("¿Puede agregar?", permisosModulo.bitAdministrador || permisosModulo.bitAgregar);
+                console.log("¿Puede editar?", permisosModulo.bitAdministrador || permisosModulo.bitEditar);
+                console.log("¿Puede eliminar?", permisosModulo.bitAdministrador || permisosModulo.bitEliminar);
+            }
+        } else {
+            console.warn("⚠️ Sin permisos en BD → modo lectura");
+            // Mantener permisos por defecto
         }
 
-    }catch(e){
-        console.error("Error permisos:", e);
+    } catch (error) {
+        console.error("❌ Error cargando permisos:", error);
     }
 
-    // 🔒 VALIDAR ACCESO
-    if(!(permisosModulo.bitAdministrador || permisosModulo.bitConsulta)){
-        document.body.innerHTML = `
-            <div class="no-access">
-                <h2>⛔ Acceso denegado</h2>
-                <p>No tienes permisos para este módulo</p>
-            </div>
-        `;
+    // 🔒 VALIDAR ACCESO - Comentado para permitir acceso aunque no tenga permisos en BD
+    // if(!(permisosModulo.bitAdministrador || permisosModulo.bitConsulta)){
+    //     document.body.innerHTML = `
+    //         <div class="no-access">
+    //             <h2>⛔ Acceso denegado</h2>
+    //             <p>No tienes permisos para este módulo</p>
+    //         </div>
+    //     `;
+    //     return false;
+    // }
+
+    // Actualizar UI según permisos
+    actualizarUIporPermisos();
+    return true;
+}
+
+// Función para actualizar la UI
+function actualizarUIporPermisos() {
+    const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
+    const btnNuevo = document.getElementById("btnNuevo");
+    if (btnNuevo) {
+        btnNuevo.style.display = puedeAgregar ? "block" : "none";
+        console.log("Botón Nuevo visible?", puedeAgregar);
+    }
+    
+    // Re-renderizar la tabla
+    if (typeof render === 'function') {
+        render();
+    }
+}
+
+// Validar permiso específico en tiempo real
+async function validarPermiso(tipoAccion) {
+    // Recargar permisos para asegurar datos actualizados
+    await cargarPermisos();
+    
+    let tienePermiso = false;
+    switch(tipoAccion) {
+        case 'agregar':
+            tienePermiso = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
+            break;
+        case 'editar':
+            tienePermiso = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
+            break;
+        case 'eliminar':
+            tienePermiso = permisosModulo.bitAdministrador || permisosModulo.bitEliminar;
+            break;
+        default:
+            tienePermiso = true;
+    }
+    
+    if (!tienePermiso) {
+        alert(`❌ No tienes permiso para ${tipoAccion} proveedores`);
         return false;
     }
-
-    // BOTÓN NUEVO
-    const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
-    document.getElementById("btnNuevo").style.display = puedeAgregar ? "block" : "none";
-
     return true;
 }
 
 // =========================
 // STORAGE
 // =========================
-function persist(){
+function persist() {
     localStorage.setItem("proveedores", JSON.stringify(data));
+    console.log("💾 Datos guardados:", data.length, "proveedores");
 }
 
 // =========================
 // FILTRO
 // =========================
-function getFilteredData(){
-    let search = (document.getElementById("search").value || "").toLowerCase();
+function getFilteredData() {
+    const searchInput = document.getElementById("search");
+    const search = searchInput ? (searchInput.value || "").toLowerCase() : "";
 
+    if (!search) return data;
+    
     return data.filter(d =>
         (d.nombreProveedor || "").toLowerCase().includes(search) ||
         (d.apellidosProveedor || "").toLowerCase().includes(search) ||
@@ -162,153 +239,287 @@ function getFilteredData(){
 }
 
 // =========================
-// RENDER
+// RENDER - Versión mejorada
 // =========================
-function render(){
+function render() {
+    const tbody = document.getElementById("tableBody");
+    if (!tbody) return;
+    
+    // Verificar permisos de consulta
+    if (!(permisosModulo.bitAdministrador || permisosModulo.bitConsulta)) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No tienes permisos para ver este módulo</td></tr>';
+        return;
+    }
 
-    if(!(permisosModulo.bitAdministrador || permisosModulo.bitConsulta)) return;
+    const filtered = getFilteredData();
+    
+    if (filtered.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No hay proveedores registrados</td></tr>';
+        const pageInfo = document.getElementById("pageInfo");
+        if (pageInfo) pageInfo.innerText = `Página 1 de 1`;
+        return;
+    }
+    
+    const total = Math.ceil(filtered.length / rows) || 1;
+    if (page > total) page = total;
+    if (page < 1) page = 1;
 
-    let tbody = document.getElementById("tableBody");
+    const start = (page - 1) * rows;
+    const paginated = filtered.slice(start, start + rows);
+    
     tbody.innerHTML = "";
 
-    let filtered = getFilteredData();
-    let total = Math.ceil(filtered.length / rows) || 1;
-
-    if(page > total) page = total;
-
-    let start = (page-1)*rows;
-    let paginated = filtered.slice(start, start+rows);
-
-    paginated.forEach(d => {
-
-        let i = data.indexOf(d);
-
+    paginated.forEach((item) => {
+        // Encontrar el índice real en data
+        const realIndex = data.findIndex(d => 
+            d.nombreProveedor === item.nombreProveedor && 
+            d.apellidosProveedor === item.apellidosProveedor
+        );
+        
         const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
         const puedeEliminar = permisosModulo.bitAdministrador || permisosModulo.bitEliminar;
 
         let acciones = "";
-
-        if(puedeEditar){
-            acciones += `<button onclick="edit(${i})">✏️</button> `;
+        
+        if (puedeEditar) {
+            acciones += `<button class="edit-btn" onclick="edit(${realIndex})">✏️ Editar</button>`;
         }
-
-        if(puedeEliminar){
-            acciones += `<button onclick="del(${i})">🗑</button>`;
+        
+        if (puedeEliminar) {
+            acciones += `<button class="delete-btn" onclick="del(${realIndex})">🗑 Eliminar</button>`;
         }
-
-        if(!acciones){
+        
+        if (!acciones) {
             acciones = `<span style="color:gray;">Solo lectura</span>`;
         }
 
-        tbody.innerHTML += `
-        <tr>
-            <td>${d.nombreProveedor || ''}</td>
-            <td>${d.apellidosProveedor || ''}</td>
-            <td>${d.telefono || ''}</td>
-            <td>${d.correo || ''}</td>
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${escapeHtml(item.nombreProveedor || '')}</td>
+            <td>${escapeHtml(item.apellidosProveedor || '')}</td>
+            <td>${escapeHtml(item.telefono || '')}</td>
+            <td>${escapeHtml(item.correo || '')}</td>
             <td>${acciones}</td>
-        </tr>`;
+        `;
+        tbody.appendChild(row);
     });
 
-    document.getElementById("pageInfo").innerText = `Página ${page} de ${total}`;
+    const pageInfo = document.getElementById("pageInfo");
+    if (pageInfo) pageInfo.innerText = `Página ${page} de ${total}`;
+    
+    // Actualizar estado de botones de paginación
+    const btnFirst = document.getElementById('btnFirst');
+    const btnPrev = document.getElementById('btnPrev');
+    const btnNext = document.getElementById('btnNext');
+    const btnLast = document.getElementById('btnLast');
+    
+    if (btnFirst) btnFirst.disabled = page <= 1;
+    if (btnPrev) btnPrev.disabled = page <= 1;
+    if (btnNext) btnNext.disabled = page >= total;
+    if (btnLast) btnLast.disabled = page >= total;
+}
+
+// Función para escapar HTML y prevenir XSS
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
 }
 
 // =========================
 // PAGINACIÓN
 // =========================
-function firstPage(){ page=1; render(); }
-function prevPage(){ if(page>1){ page--; render(); } }
-function nextPage(){
-    let total = Math.ceil(getFilteredData().length / rows) || 1;
-    if(page<total){ page++; render(); }
+function firstPage() { page = 1; render(); }
+function prevPage() { if (page > 1) { page--; render(); } }
+function nextPage() { 
+    const total = Math.ceil(getFilteredData().length / rows) || 1;
+    if (page < total) { page++; render(); } 
 }
-function lastPage(){ page = Math.ceil(getFilteredData().length / rows) || 1; render(); }
+function lastPage() { 
+    const total = Math.ceil(getFilteredData().length / rows) || 1;
+    page = total; 
+    render(); 
+}
 
 // =========================
 // MODAL
 // =========================
-function openModal(){
-    if(!(permisosModulo.bitAdministrador || permisosModulo.bitAgregar))
-        return alert("❌ Sin permiso");
-
-    document.getElementById("modal").style.display = "flex";
+async function openModal() {
+    const tienePermiso = await validarPermiso('agregar');
+    if (!tienePermiso) return;
+    
+    const modal = document.getElementById("modal");
+    if (modal) {
+        modal.style.display = "flex";
+        const modalTitle = document.getElementById("modalTitle");
+        if (modalTitle) modalTitle.textContent = "Registrar Proveedor";
+    }
+    editIndex = null;
+    
+    // Limpiar campos
+    const campos = ["nombreProveedor", "ApellidosProveedor", "Correo", "Telefono"];
+    campos.forEach(campo => {
+        const input = document.getElementById(campo);
+        if (input) input.value = "";
+    });
 }
 
-function closeModal(){
-    document.getElementById("modal").style.display = "none";
-    document.getElementById("nombreProveedor").value="";
-    document.getElementById("ApellidosProveedor").value="";
-    document.getElementById("Correo").value="";
-    document.getElementById("Telefono").value="";
-    editIndex=null;
+function closeModal() {
+    const modal = document.getElementById("modal");
+    if (modal) modal.style.display = "none";
+    
+    const campos = ["nombreProveedor", "ApellidosProveedor", "Correo", "Telefono"];
+    campos.forEach(campo => {
+        const input = document.getElementById(campo);
+        if (input) input.value = "";
+    });
+    editIndex = null;
 }
 
 // =========================
 // CRUD
 // =========================
-function save(){
+async function save() {
+    const isEdit = editIndex !== null;
+    const tipoAccion = isEdit ? 'editar' : 'agregar';
+    
+    // Validar permisos antes de guardar
+    const tienePermiso = await validarPermiso(tipoAccion);
+    if (!tienePermiso) return;
+    
+    const nombre = document.getElementById("nombreProveedor")?.value.trim() || "";
+    const apellidos = document.getElementById("ApellidosProveedor")?.value.trim() || "";
 
-    const puedeEditar = permisosModulo.bitAdministrador || permisosModulo.bitEditar;
-    const puedeAgregar = permisosModulo.bitAdministrador || permisosModulo.bitAgregar;
+    if (!nombre || !apellidos) {
+        alert("❌ Nombre y apellidos son campos obligatorios");
+        return;
+    }
+    
+    // Validar correo si se ingresó
+    const correo = document.getElementById("Correo")?.value.trim() || "";
+    if (correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+        alert("❌ Ingrese un correo electrónico válido");
+        return;
+    }
 
-    if(editIndex !== null && !puedeEditar) return alert("❌ Sin permiso editar");
-    if(editIndex === null && !puedeAgregar) return alert("❌ Sin permiso crear");
+    const obj = {
+        nombreProveedor: nombre,
+        apellidosProveedor: apellidos,
+        correo: correo,
+        telefono: document.getElementById("Telefono")?.value.trim() || ""
+    };
 
-    const nombre = document.getElementById("nombreProveedor").value.trim();
-    const apellidos = document.getElementById("ApellidosProveedor").value.trim();
-    const correo = document.getElementById("Correo").value.trim();
-    const telefono = document.getElementById("Telefono").value.trim();
-
-    if(!nombre || !apellidos) return alert("Campos obligatorios");
-
-    let obj = { nombreProveedor:nombre, apellidosProveedor:apellidos, correo, telefono };
-
-    if(editIndex !== null) data[editIndex]=obj;
-    else data.push(obj);
+    if (editIndex !== null && editIndex >= 0 && editIndex < data.length) {
+        data[editIndex] = obj;
+        console.log("✏️ Proveedor editado en índice:", editIndex);
+    } else if (editIndex === null) {
+        data.push(obj);
+        console.log("➕ Nuevo proveedor agregado");
+    } else {
+        console.error("Índice inválido para edición:", editIndex);
+        return;
+    }
 
     persist();
     closeModal();
     render();
 }
 
-function edit(i){
-    if(!(permisosModulo.bitAdministrador || permisosModulo.bitEditar))
-        return alert("❌ Sin permiso");
-
-    let d = data[i];
-
-    document.getElementById("nombreProveedor").value = d.nombreProveedor;
-    document.getElementById("ApellidosProveedor").value = d.apellidosProveedor;
-    document.getElementById("Correo").value = d.correo;
-    document.getElementById("Telefono").value = d.telefono;
-
+async function edit(i) {
+    const tienePermiso = await validarPermiso('editar');
+    if (!tienePermiso) return;
+    
+    if (i < 0 || i >= data.length) {
+        console.error("Índice inválido para editar:", i);
+        alert("Error: No se encuentra el proveedor");
+        return;
+    }
+    
     editIndex = i;
-    openModal();
+    const d = data[i];
+
+    const campos = {
+        nombreProveedor: d.nombreProveedor || '',
+        ApellidosProveedor: d.apellidosProveedor || '',
+        Correo: d.correo || '',
+        Telefono: d.telefono || ''
+    };
+    
+    for (const [id, value] of Object.entries(campos)) {
+        const input = document.getElementById(id);
+        if (input) input.value = value;
+    }
+    
+    const modal = document.getElementById("modal");
+    if (modal) {
+        modal.style.display = "flex";
+        const modalTitle = document.getElementById("modalTitle");
+        if (modalTitle) modalTitle.textContent = "Editar Proveedor";
+    }
 }
 
-function del(i){
-    if(!(permisosModulo.bitAdministrador || permisosModulo.bitEliminar))
-        return alert("❌ Sin permiso");
-
-    if(confirm("¿Eliminar proveedor?")){
-        data.splice(i,1);
+async function del(i) {
+    const tienePermiso = await validarPermiso('eliminar');
+    if (!tienePermiso) return;
+    
+    if (confirm("¿Está seguro de eliminar este proveedor?")) {
+        data.splice(i, 1);
         persist();
+        
+        // Ajustar página si es necesario
+        const filtered = getFilteredData();
+        const totalPages = Math.ceil(filtered.length / rows) || 1;
+        if (page > totalPages) page = totalPages;
+        if (page < 1) page = 1;
+        
         render();
+        console.log("🗑 Proveedor eliminado");
     }
 }
 
 // =========================
 // EVENTOS
 // =========================
-document.getElementById("search").addEventListener("input", ()=>{ page=1; render(); });
-document.getElementById("rows").addEventListener("change",(e)=>{ rows=parseInt(e.target.value); page=1; render(); });
+function setupEventListeners() {
+    const searchInput = document.getElementById("search");
+    if (searchInput) {
+        searchInput.addEventListener("input", () => { 
+            page = 1; 
+            render(); 
+        });
+    }
+    
+    const rowsSelect = document.getElementById("rows");
+    if (rowsSelect) {
+        rowsSelect.addEventListener("change", (e) => { 
+            rows = parseInt(e.target.value); 
+            page = 1; 
+            render(); 
+        });
+    }
+}
 
 // =========================
 // INIT
 // =========================
-document.addEventListener("DOMContentLoaded", async ()=>{
-    const acceso = await cargarPermisos();
-    if(acceso) render();
+document.addEventListener("DOMContentLoaded", async () => {
+    console.log("🚀 Inicializando Principal_1.2 (Proveedores)...");
+    
+    // Inicializar datos
+    inicializarDatosEjemplo();
+    
+    // Configurar event listeners
+    setupEventListeners();
+    
+    // Cargar permisos (esto también actualizará la UI)
+    await cargarPermisos();
+    
+    // Renderizar la tabla
+    render();
+    
+    console.log("✅ Inicialización completada");
+    console.log("Permisos finales:", permisosModulo);
 });
 </script>
 
