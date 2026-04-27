@@ -10,16 +10,16 @@
 body{
     height:100vh;
     display:flex;
-    justify-content:flex-start; /* Cambiado de center a flex-start para alinear a la izquierda */
-    align-items:center;
-    background-image: url('/img/sesion.png'); /* Ruta de tu imagen */
+    justify-content:center; /* Centrado horizontal */
+    align-items:center;     /* Centrado vertical */
+    background-image: url('/img/sesion.png');
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     position: relative;
 }
 
-/* Capa overlay para mejorar legibilidad (opcional) */
+/* Capa overlay para mejorar legibilidad */
 body::before {
     content: '';
     position: absolute;
@@ -27,22 +27,21 @@ body::before {
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(0, 0, 0, 0.5); /* Oscurece ligeramente el fondo */
+    background: rgba(0, 0, 0, 0.5);
     z-index: 0;
 }
 
-/* CONTENEDOR - Alineado a la izquierda */
+/* CONTENEDOR - Centrado */
 .container{
-    background: rgba(255, 255, 255, 0.95); /* Blanco semitransparente */
+    background: rgba(255, 255, 255, 0.95);
     padding: 40px;
     border-radius: 12px;
     width: 380px;
     box-shadow: 0 10px 25px rgba(0,0,0,0.3);
     animation: fadeIn 0.6s ease;
-    margin-left: 8%; /* Espaciado desde la izquierda */
     position: relative;
     z-index: 1;
-    backdrop-filter: blur(2px); /* Efecto vidrio esmerilado */
+    backdrop-filter: blur(2px);
 }
 
 /* TITULO */
@@ -84,7 +83,7 @@ body::before {
     display:flex;
     justify-content:center;
     margin-bottom:15px;
-    transform: scale(0.95); /* Pequeño ajuste para que quepa mejor */
+    transform: scale(0.95);
 }
 
 /* BOTON */
@@ -135,23 +134,18 @@ button:disabled {
 @keyframes fadeIn{
     from{
         opacity:0;
-        transform:translateX(-30px); /* Cambiado de translateY a translateX para efecto lateral */
+        transform:translateY(-30px);
     }
     to{
         opacity:1;
-        transform:translateX(0);
+        transform:translateY(0);
     }
 }
 
 /* RESPONSIVE */
 @media (max-width: 768px) {
-    body {
-        justify-content: center; /* Centrado en móviles */
-    }
-    
     .container {
         width: 90%;
-        margin-left: 0;
         padding: 30px 20px;
     }
     
