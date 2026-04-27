@@ -43,15 +43,15 @@
 </nav>
 
 <aside id="user-sidebar" class="user-sidebar">
-<div class="sidebar-header">
-<h3>Perfil de Usuario</h3>
-<button id="close-sidebar">&times;</button>
-</div> 
-<div class="sidebar-content">
-<% if (locals.user) { %>
-<div class="profile-main-photo">
+ <div class="sidebar-header">
+ <h3>Perfil de Usuario</h3>
+ <button id="close-sidebar">&times;</button>
+  </div> 
+ <div class="sidebar-content">
+ <% if (locals.user) { %>
+ <div class="profile-main-photo">
  <img src="<%= user.FotoUrl || '/img/default-avatar.png' %>" id="sidebar-avatar-img" alt="Avatar">
-</div>
+ </div>
 
  <div class="profile-info">
  <p><strong>Usuario:</strong> <span><%= user.strNombreUsuario %></span></p>
@@ -69,8 +69,9 @@
  <% } else { %>
  <div class="profile-info">
  <p>Sesión no iniciada</p>
-</div>
+ </div>
  <% } %>
  <hr>
  <a href="/login" class="btn-logout">Cerrar Sesión</a>
-</div>
+ </div>
+</aside>
