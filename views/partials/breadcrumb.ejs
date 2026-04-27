@@ -49,29 +49,28 @@
 </div> 
 <div class="sidebar-content">
 <% if (locals.user) { %>
-      <div class="profile-main-photo">
-          <img src="<%= user.FotoUrl || '/img/default-avatar.png' %>" id="sidebar-avatar-img" alt="Avatar">
-      </div>
+<div class="profile-main-photo">
+ <img src="<%= user.FotoUrl || '/img/default-avatar.png' %>" id="sidebar-avatar-img" alt="Avatar">
+</div>
 
-      <div class="profile-info">
-        <p><strong>Usuario:</strong> <span><%= user.strNombreUsuario %></span></p>
-        <p><strong>Perfil:</strong> <span><%= user.PerfilNombre || 'Usuario' %></span></p>
-        <p><strong>Correo:</strong> <span><%= user.strCorreo %></span></p>
-        <p><strong>Celular:</strong> <span><%= user.strCelular || 'No registrado' %></span></p>
-      </div>
+ <div class="profile-info">
+ <p><strong>Usuario:</strong> <span><%= user.strNombreUsuario %></span></p>
+ <p><strong>Perfil:</strong> <span><%= user.PerfilNombre || 'Usuario' %></span></p>
+ <p><strong>Correo:</strong> <span><%= user.strCorreo %></span></p>
+ <p><strong>Celular:</strong> <span><%= user.strCelular || 'No registrado' %></span></p>
+ </div>
 
-      <div class="upload-section">
-        <p class="upload-text">Cambiar foto de perfil</p>
-        <input type="file" id="image-input" accept="image/*" style="display: none;">
-        <button type="button" onclick="document.getElementById('image-input').click()" class="btn-select">Seleccionar Imagen</button>
-        <button id="btn-upload" class="btn-primary">Actualizar Foto</button>
-      </div>
-    <% } else { %>
-      <div class="profile-info">
-        <p>Sesión no iniciada</p>
-      </div>
-    <% } %>
-
-    <hr>
-    <a href="/login" class="btn-logout">Cerrar Sesión</a>
-  </div>
+ <div class="upload-section">
+ <p class="upload-text">Cambiar foto de perfil</p>
+ <input type="file" id="image-input" accept="image/*" style="display: none;">
+ <button type="button" onclick="document.getElementById('image-input').click()" class="btn-select">Seleccionar Imagen</button>
+ <button id="btn-upload" class="btn-primary">Actualizar Foto</button>
+ </div>
+ <% } else { %>
+ <div class="profile-info">
+ <p>Sesión no iniciada</p>
+</div>
+ <% } %>
+ <hr>
+ <a href="/login" class="btn-logout">Cerrar Sesión</a>
+</div>
